@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
-  const { name, email, password, doctorId, condition } = await request.json();
-  if (!name || !email || !password || !doctorId || !condition) {
+  const { name, email, password, condition } = await request.json();
+  if (!name || !email || !password || !condition) {
     return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
   }
   if (password.length < 8) {
@@ -14,10 +14,11 @@ export async function POST(request: NextRequest) {
   const { data: doctor } = await supabase
     .from('users')
     .select('id')
-    .eq('id', Number(doctorId))
     .eq('role', 'doctor')
+    .order('id')
+    .limit(1)
     .maybeSingle();
-  if (!doctor) return NextResponse.json({ error: 'Choose a valid clinician' }, { status: 400 });
+  if (!doctor) return NextResponse.json({ error: 'No clinician is available yet. Run the Supabase seed command first.' }, { status: 503 });
 
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
