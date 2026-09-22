@@ -37,18 +37,27 @@ The repository is ready for a Next.js deployment on Vercel:
 
 1. Push this repository to GitHub, GitLab, or Bitbucket and import it in [Vercel](https://vercel.com/new).
 2. Vercel detects the included `vercel.json` and runs `npm ci` followed by `npm run build`.
-3. In **Settings → Environment Variables**, add a long, random `JWT_SECRET`. Add `GEMINI_API_KEY` if Gemini analysis is required.
+3. In **Settings → Environment Variables**, add the Supabase variables below and `GEMINI_API_KEY` if Gemini analysis is required.
 4. Deploy. The project pins the Vercel Node.js runtime to `22.x`, required by the built-in SQLite driver.
 
-On Vercel, the SQLite file is created under `/tmp`, which is writable but temporary. Demo accounts are seeded automatically on a new function instance (set `SEED_DEMO_DATA=false` to disable this). Check-ins and exercise records therefore do not survive a cold start or scale-out. Use a managed database before storing real patient data; the current setup is appropriate only for a demo deployment.
+On Vercel, the SQLite file is created under `/tmp`, which is writable but temporary. Use Supabase before storing real patient data.
+
+### Supabase setup
+
+1. Create a project at [Supabase](https://supabase.com/dashboard), then open **SQL Editor** and run [`supabase/schema.sql`](./supabase/schema.sql).
+2. In the project **Connect** dialog, copy the Project URL and the **secret** API key. Add them to Vercel as `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. The secret key must never be exposed through a `NEXT_PUBLIC_` variable.
+3. To create the two zero-stat demo accounts, set the same variables in `.env.local` and run `npm run db:seed:supabase`.
+
+The schema, server-only client, and seed command are included. The current application still uses local SQLite routes; migration of the API routes to Supabase is the next implementation step before production use.
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GEMINI_API_KEY` | Recommended | Google Gemini API key for recovery analysis |
-| `JWT_SECRET` | Optional | Session signing secret (defaults to dev value) |
 | `SEED_DEMO_DATA` | Optional | Seed demo accounts on Vercel function startup (default: `true`) |
+| `SUPABASE_URL` | Required for Supabase | Project URL from Supabase Connect |
+| `SUPABASE_SECRET_KEY` | Required for Supabase | Server-only secret API key from Supabase Connect |
 
 Without `GEMINI_API_KEY`, the app uses a local fallback analysis engine.
 

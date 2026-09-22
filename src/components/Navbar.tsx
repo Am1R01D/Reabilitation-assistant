@@ -28,11 +28,11 @@ export function Navbar({ items, userName, role }: NavbarProps) {
   }
 
   return (
-    <nav className="bg-white border-b border-clinical-200 sticky top-0 z-50">
+    <nav className="bg-white/80 backdrop-blur-xl border-b border-white/80 sticky top-0 z-50 shadow-[0_1px_0_rgba(15,53,58,0.06)]">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href={items[0]?.href || '/'} className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-medical-600 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-medical-600 rounded-xl flex items-center justify-center shadow-[0_5px_12px_rgba(34,117,108,0.25)]">
               <Activity className="w-5 h-5 text-white" />
             </div>
             <span className="font-semibold text-clinical-900 hidden sm:block">RehabAssist</span>
@@ -44,7 +44,7 @@ export function Navbar({ items, userName, role }: NavbarProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                  'px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200',
                   pathname === item.href
                     ? 'bg-medical-50 text-medical-700'
                     : 'text-clinical-600 hover:bg-clinical-50'
@@ -62,7 +62,7 @@ export function Navbar({ items, userName, role }: NavbarProps) {
             </div>
             <button
               onClick={handleLogout}
-              className="p-2 text-clinical-500 hover:text-clinical-700 hover:bg-clinical-50 rounded-lg"
+              className="p-2 text-clinical-500 hover:text-clinical-700 hover:bg-clinical-50 rounded-xl transition-colors"
               title="Sign out"
             >
               <LogOut className="w-4 h-4" />

@@ -1,41 +1,13 @@
-import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
-import bcrypt from 'bcryptjs';
-import { getDb } from './db';
+import { getSupabaseAdmin } from './supabase';
 import type { User, UserRole } from './types';
 
-const COOKIE_NAME = 'rehab_session';
-
-function getSecret() {
-  return new TextEncoder().encode(
-    process.env.JWT_SECRET || 'dev-secret-change-in-production'
-  );
-}
+const COOKIE_NAME = 'rehab_access_token';
 
 export interface SessionPayload {
   userId: number;
   role: UserRole;
   name: string;
-}
-
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10);
-}
-
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
-
-export async function createSession(user: User): Promise<string> {
-  const token = await new SignJWT({
-    userId: user.id,
-    role: user.role,
-    name: user.name,
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('7d')
-    .sign(getSecret());
-  return token;
 }
 
 export async function getSession(): Promise<SessionPayload | null> {
@@ -44,37 +16,33 @@ export async function getSession(): Promise<SessionPayload | null> {
   if (!token) return null;
 
   try {
-    const { payload } = await jwtVerify(token, getSecret());
+    const supabase = getSupabaseAdmin();
+    const { data: authData, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authData.user) return null;
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, role, name')
+      .eq('auth_user_id', authData.user.id)
+      .single();
+    if (error || !user) return null;
     return {
-      userId: payload.userId as number,
-      role: payload.role as UserRole,
-      name: payload.name as string,
+      userId: Number(user.id),
+      role: user.role as UserRole,
+      name: user.name,
     };
   } catch {
     return null;
   }
 }
 
-export function getUserByEmail(email: string): User | undefined {
-  const db = getDb();
-  return db.prepare('SELECT * FROM users WHERE email = ?').get(email) as User | undefined;
+export async function getUserById(id: number): Promise<User | undefined> {
+  const { data } = await getSupabaseAdmin().from('users').select('*').eq('id', id).maybeSingle();
+  return data as User | undefined;
 }
 
-export function getUserById(id: number): User | undefined {
-  const db = getDb();
-  return db.prepare('SELECT * FROM users WHERE id = ?').get(id) as User | undefined;
-}
-
-export function getPatientByUserId(userId: number) {
-  const db = getDb();
-  return db.prepare('SELECT * FROM patients WHERE user_id = ?').get(userId) as
-    | { id: number; user_id: number; doctor_id: number; condition: string; start_date: string }
-    | undefined;
-}
-
-export function getPatientById(patientId: number) {
-  const db = getDb();
-  return db.prepare('SELECT * FROM patients WHERE id = ?').get(patientId);
+export async function getPatientByUserId(userId: number) {
+  const { data } = await getSupabaseAdmin().from('patients').select('*').eq('user_id', userId).maybeSingle();
+  return data as { id: number; user_id: number; doctor_id: number; condition: string; start_date: string } | undefined;
 }
 
 export { COOKIE_NAME };

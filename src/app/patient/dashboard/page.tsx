@@ -36,9 +36,9 @@ export default function PatientDashboard() {
   useEffect(() => {
     async function load() {
       const [progressRes, checkInRes, sessionRes] = await Promise.all([
-        fetch('/api/progress'),
-        fetch('/api/check-in'),
-        fetch('/api/exercises/session'),
+        fetch('/api/progress', { cache: 'no-store' }),
+        fetch('/api/check-in', { cache: 'no-store' }),
+        fetch('/api/exercises/session', { cache: 'no-store' }),
       ]);
       const progress = await progressRes.json();
       const checkIn = await checkInRes.json();
@@ -66,16 +66,20 @@ export default function PatientDashboard() {
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-clinical-900">Welcome back</h1>
-        <p className="text-clinical-500 mt-1">{data.condition}</p>
+    <div className="space-y-6 page-enter">
+      <div className="rounded-3xl bg-medical-800 text-white p-6 sm:p-8 relative overflow-hidden shadow-[0_18px_45px_rgba(28,76,72,0.22)]">
+        <div className="absolute -right-12 -top-16 w-52 h-52 rounded-full bg-medical-500/35 blur-2xl" />
+        <div className="relative">
+          <p className="text-medical-200 text-sm font-medium mb-2">YOUR RECOVERY SPACE</p>
+          <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+          <p className="text-medical-100 mt-2">{data.condition}</p>
+        </div>
       </div>
 
       <SafetyBanner />
 
       {!data.todayCheckIn && (
-        <div className="card p-4 bg-medical-50 border-medical-200 flex items-center justify-between">
+        <div className="card p-4 bg-medical-50 border-medical-200 flex items-center justify-between animate-[page-enter_500ms_ease-out]">
           <div className="flex items-center gap-3">
             <CalendarCheck className="w-5 h-5 text-medical-600" />
             <p className="text-sm font-medium text-medical-900">
@@ -91,15 +95,15 @@ export default function PatientDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Pain Level"
-          value={latestCheckIn ? `${latestCheckIn.pain}/10` : '—'}
-          subtitle={latestCheckIn ? 'Latest check-in' : 'No data'}
+          value={latestCheckIn ? `${latestCheckIn.pain}/10` : '0/10'}
+          subtitle={latestCheckIn ? 'Latest check-in' : 'No check-ins yet'}
           icon={Heart}
           trend={latestCheckIn && latestCheckIn.pain <= 4 ? 'up' : 'down'}
         />
         <StatCard
           title="Mobility"
-          value={latestCheckIn ? `${latestCheckIn.mobility}/10` : '—'}
-          subtitle={latestCheckIn ? 'Latest check-in' : 'No data'}
+          value={latestCheckIn ? `${latestCheckIn.mobility}/10` : '0/10'}
+          subtitle={latestCheckIn ? 'Latest check-in' : 'No check-ins yet'}
           icon={TrendingUp}
           trend={latestCheckIn && latestCheckIn.mobility >= 6 ? 'up' : 'neutral'}
         />
@@ -118,7 +122,7 @@ export default function PatientDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card p-5">
+        <div className="card p-5 card-interactive">
           <h3 className="font-semibold text-clinical-900 mb-4">Today&apos;s Plan</h3>
           <div className="space-y-3">
             <Link

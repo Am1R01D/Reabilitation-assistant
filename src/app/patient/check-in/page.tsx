@@ -48,10 +48,16 @@ export default function CheckInPage() {
 
     if (res.ok) {
       setSubmitted(true);
+      setAlreadyDone(true);
       setShowWarning(data.warning);
     } else {
       alert(data.error || 'Check-in failed');
     }
+  }
+
+  function returnToDashboard() {
+    router.replace('/patient/dashboard');
+    router.refresh();
   }
 
   if (alreadyDone && !submitted) {
@@ -60,7 +66,7 @@ export default function CheckInPage() {
         <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
         <h2 className="text-xl font-bold text-clinical-900">Check-in Complete</h2>
         <p className="text-clinical-500 mt-2">You&apos;ve already checked in today. Great job!</p>
-        <button onClick={() => router.push('/patient/dashboard')} className="btn-primary mt-6">
+        <button onClick={returnToDashboard} className="btn-primary mt-6">
           Back to Dashboard
         </button>
       </div>
@@ -76,7 +82,7 @@ export default function CheckInPage() {
           <p className="text-clinical-500 mt-2">Your daily recovery data has been saved.</p>
         </div>
         {showWarning && <SafetyBanner variant="warning" />}
-        <button onClick={() => router.push('/patient/dashboard')} className="btn-primary w-full">
+        <button onClick={returnToDashboard} className="btn-primary w-full">
           Back to Dashboard
         </button>
       </div>
@@ -84,7 +90,7 @@ export default function CheckInPage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-6">
+    <div className="max-w-lg mx-auto space-y-6 page-enter">
       <div>
         <h1 className="text-2xl font-bold text-clinical-900">Daily Check-in</h1>
         <p className="text-clinical-500 mt-1">How are you feeling today?</p>
@@ -92,7 +98,7 @@ export default function CheckInPage() {
 
       <SafetyBanner />
 
-      <form onSubmit={handleSubmit} className="card p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="card p-6 sm:p-7 space-y-6">
         <ScaleInput label="Pain Level" value={pain} onChange={setPain} min={0} max={10} lowLabel="No pain" highLabel="Severe" />
         <ScaleInput label="Mobility" value={mobility} onChange={setMobility} min={0} max={10} lowLabel="Limited" highLabel="Full" />
         <ScaleInput label="Fatigue" value={fatigue} onChange={setFatigue} min={0} max={10} lowLabel="Energetic" highLabel="Exhausted" />

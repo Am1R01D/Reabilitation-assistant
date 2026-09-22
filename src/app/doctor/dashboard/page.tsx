@@ -40,14 +40,16 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 page-enter">
+      <div className="rounded-3xl bg-clinical-900 text-white p-6 sm:p-8 flex items-center justify-between gap-4 relative overflow-hidden">
+        <div className="absolute -right-12 -top-16 w-52 h-52 rounded-full bg-medical-500/30 blur-2xl" />
         <div>
-          <h1 className="text-2xl font-bold text-clinical-900">Patient Overview</h1>
-          <p className="text-clinical-500 mt-1">Monitor recovery progress and alerts</p>
+          <p className="text-medical-200 text-sm font-medium mb-2">CLINICIAN WORKSPACE</p>
+          <h1 className="text-3xl font-bold tracking-tight">Patient Overview</h1>
+          <p className="text-clinical-300 mt-2">Monitor recovery progress and alerts</p>
         </div>
         {totalAlerts > 0 && (
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-lg text-sm">
+          <div className="relative flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-xl text-sm">
             <AlertTriangle className="w-4 h-4" />
             {totalAlerts} alert{totalAlerts !== 1 ? 's' : ''} need review
           </div>
@@ -62,7 +64,7 @@ export default function DoctorDashboard() {
           <p className="text-clinical-500">No patients assigned</p>
         </div>
       ) : (
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden shadow-[0_15px_35px_rgba(15,53,58,0.08)]">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

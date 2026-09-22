@@ -7,12 +7,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const user = getUserById(session.userId);
+  const user = await getUserById(session.userId);
   if (!user) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const patient = session.role === 'patient' ? getPatientByUserId(session.userId) : null;
+  const patient = session.role === 'patient' ? await getPatientByUserId(session.userId) : null;
 
   return NextResponse.json({
     user: { id: user.id, name: user.name, role: user.role, email: user.email },

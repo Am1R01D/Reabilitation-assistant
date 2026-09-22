@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const patient = getPatientByUserId(session.userId);
+  const patient = await getPatientByUserId(session.userId);
   if (!patient) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
 
   const db = getDb();

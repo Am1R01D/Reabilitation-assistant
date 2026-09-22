@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { COOKIE_NAME, createSession, getUserByEmail, verifyPassword } from '@/lib/auth';
+import { COOKIE_NAME } from '@/lib/auth';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,21 +10,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
     }
 
-    const user = getUserByEmail(email);
-    if (!user || !(await verifyPassword(password, user.password_hash))) {
+    const supabase = getSupabaseAdmin();
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    if (authError || !authData.session || !authData.user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
-
-    const token = await createSession(user);
+    const { data: user } = await supabase.from('users').select('id, name, role, email').eq('auth_user_id', authData.user.id).single();
+    if (!user) return NextResponse.json({ error: 'Account profile not found' }, { status: 401 });
     const response = NextResponse.json({
       user: { id: user.id, name: user.name, role: user.role, email: user.email },
     });
 
-    response.cookies.set(COOKIE_NAME, token, {
+    response.cookies.set(COOKIE_NAME, authData.session.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: authData.session.expires_in,
       path: '/',
     });
 

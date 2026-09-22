@@ -12,7 +12,7 @@ interface StatCardProps {
 
 export function StatCard({ title, value, subtitle, icon: Icon, trend, className }: StatCardProps) {
   return (
-    <div className={cn('card p-5', className)}>
+    <div className={cn('card card-interactive p-5', className)}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-clinical-500 mb-1">{title}</p>
@@ -30,7 +30,7 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, className 
             </p>
           )}
         </div>
-        <div className="w-10 h-10 bg-medical-50 rounded-lg flex items-center justify-center">
+        <div className="w-10 h-10 bg-medical-50 rounded-xl flex items-center justify-center">
           <Icon className="w-5 h-5 text-medical-600" />
         </div>
       </div>

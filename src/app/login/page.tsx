@@ -52,17 +52,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-medical-50 via-white to-clinical-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-medical-50 via-white to-clinical-100 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute w-80 h-80 -left-32 -bottom-32 rounded-full bg-medical-200/50 blur-3xl" />
+      <div className="w-full max-w-md space-y-6 page-enter relative">
         <div className="text-center">
-          <div className="w-14 h-14 bg-medical-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 bg-medical-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_12px_25px_rgba(34,117,108,0.28)] float-gentle">
             <Activity className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-clinical-900">RehabAssist</h1>
           <p className="text-clinical-500 mt-1">Home Rehabilitation Platform</p>
         </div>
 
-        <div className="card p-6">
+        <div className="card p-6 sm:p-7">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="label" htmlFor="email">Email</label>

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   let condition: string;
 
   if (session.role === 'patient') {
-    const patient = getPatientByUserId(session.userId);
+    const patient = await getPatientByUserId(session.userId);
     if (!patient) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
     patientId = patient.id;
     condition = patient.condition;
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
   let patientId = searchParams.get('patientId');
 
   if (session.role === 'patient') {
-    const patient = getPatientByUserId(session.userId);
+    const patient = await getPatientByUserId(session.userId);
     if (!patient) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
     patientId = String(patient.id);
   }
