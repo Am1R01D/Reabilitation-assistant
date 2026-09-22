@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     .prepare(
       'SELECT * FROM exercise_sessions WHERE patient_id = ? ORDER BY created_at DESC LIMIT 10'
     )
-    .all(patient.id) as ExerciseSession[];
+    .all(patient.id) as unknown as ExerciseSession[];
 
   evaluatePerformanceAlerts(patient.id, allSessions);
 

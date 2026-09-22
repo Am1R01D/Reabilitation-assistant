@@ -18,7 +18,7 @@ export async function GET() {
   const db = getDb();
   const checkIns = db
     .prepare('SELECT * FROM check_ins WHERE patient_id = ? ORDER BY date DESC LIMIT 30')
-    .all(patient.id) as CheckIn[];
+   .all(patient.id) as unknown as CheckIn[];
 
   const today = db
     .prepare('SELECT * FROM check_ins WHERE patient_id = ? AND date = ?')
@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
       exercisesCompleted ? 1 : 0
     );
 
-  const checkIn = db.prepare('SELECT * FROM check_ins WHERE id = ?').get(result.lastInsertRowid) as CheckIn;
+  const checkIn = db
+    .prepare('SELECT * FROM check_ins WHERE id = ?')
+    .get(result.lastInsertRowid) as unknown as CheckIn;
 
   evaluateCheckInAlerts(patient.id, checkIn);
   evaluateAdherenceAlerts(patient.id);

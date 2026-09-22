@@ -16,11 +16,11 @@ export async function GET() {
   const db = getDb();
   const checkIns = db
     .prepare('SELECT * FROM check_ins WHERE patient_id = ? ORDER BY date ASC')
-    .all(patient.id) as CheckIn[];
+    .all(patient.id) as unknown as CheckIn[];
 
   const sessions = db
     .prepare('SELECT * FROM exercise_sessions WHERE patient_id = ? ORDER BY created_at ASC')
-    .all(patient.id) as ExerciseSession[];
+    .all(patient.id) as unknown as ExerciseSession[];
 
   const gamification = getGamification(patient.id);
 

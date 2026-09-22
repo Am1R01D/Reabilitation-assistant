@@ -36,13 +36,13 @@ export async function POST(request: NextRequest) {
   const db = getDb();
   const checkIns = db
     .prepare('SELECT * FROM check_ins WHERE patient_id = ? ORDER BY date DESC LIMIT 14')
-    .all(patientId) as CheckIn[];
+    .all(patientId) as unknown as CheckIn[];
 
   const sessions = db
     .prepare(
       'SELECT * FROM exercise_sessions WHERE patient_id = ? ORDER BY created_at DESC LIMIT 10'
     )
-    .all(patientId) as ExerciseSession[];
+    .all(patientId) as unknown as ExerciseSession[];
 
   const analysis = await analyzeRecovery(checkIns, sessions, condition);
 

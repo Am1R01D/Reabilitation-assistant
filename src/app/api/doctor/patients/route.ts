@@ -32,7 +32,7 @@ export async function GET() {
   const enriched = patients.map((patient) => {
     const latestCheckIn = db
       .prepare('SELECT * FROM check_ins WHERE patient_id = ? ORDER BY date DESC LIMIT 1')
-      .get(patient.id) as CheckIn | undefined;
+      .get(patient.id) as unknown as CheckIn | undefined;
 
     const checkIns = db
       .prepare('SELECT exercises_completed FROM check_ins WHERE patient_id = ?')
@@ -42,7 +42,7 @@ export async function GET() {
       .prepare(
         'SELECT * FROM exercise_sessions WHERE patient_id = ? ORDER BY created_at DESC LIMIT 1'
       )
-      .get(patient.id) as ExerciseSession | undefined;
+      .get(patient.id) as unknown as ExerciseSession | undefined;
 
     const alertCount = db
       .prepare(
