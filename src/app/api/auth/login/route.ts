@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     if (authError || !authData.session || !authData.user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
+    const authenticatedEmail = authData.user.email?.trim().toLowerCase() || email.trim().toLowerCase();
     let { data: user } = await supabase
       .from('users')
       .select('id, name, role, email')
@@ -23,7 +24,6 @@ export async function POST(request: NextRequest) {
 
     // Repairs accounts created before their profile/Auth link was stored.
     if (!user) {
-      const authenticatedEmail = authData.user.email?.trim().toLowerCase() || email.trim().toLowerCase();
       const { data: legacyProfile } = await supabase
         .from('users')
         .select('id, name, role, email')
