@@ -23,10 +23,11 @@ export async function POST(request: NextRequest) {
 
     // Repairs accounts created before their profile/Auth link was stored.
     if (!user) {
+      const authenticatedEmail = authData.user.email?.trim().toLowerCase() || email.trim().toLowerCase();
       const { data: legacyProfile } = await supabase
         .from('users')
         .select('id, name, role, email')
-        .eq('email', email)
+        .ilike('email', authenticatedEmail)
         .maybeSingle();
       if (legacyProfile) {
         const { error: linkError } = await supabase
@@ -64,11 +65,11 @@ export async function POST(request: NextRequest) {
       const profileName =
         typeof authData.user.user_metadata.full_name === 'string'
           ? authData.user.user_metadata.full_name
-          : email.split('@')[0];
-      const { data: createdProfile } = await supabase
+          : authenticatedEmail.split('@')[0];
+      const { data: createdProfile, error: createProfileError } = await supabase
         .from('users')
         .insert({
-          email,
+          email: authenticatedEmail,
           name: profileName,
           role: 'patient',
           password_hash: '',
@@ -89,6 +90,9 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
         if (patient) await supabase.from('gamification').insert({ patient_id: patient.id });
         user = createdProfile;
+      }
+      if (createProfileError) {
+        console.error('Profile recovery failed:', createProfileError);
       }
     }
     if (!user) return NextResponse.json({ error: 'Unable to create your account profile. Please try again.' }, { status: 500 });
