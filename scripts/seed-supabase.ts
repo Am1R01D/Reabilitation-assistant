@@ -1,5 +1,8 @@
+import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import { getSupabaseAdmin } from '../src/lib/supabase';
+
+dotenv.config({ path: '.env.local' });
 
 async function findOrCreateUser(email: string, name: string, role: 'doctor' | 'patient', passwordHash: string) {
   const supabase = getSupabaseAdmin();

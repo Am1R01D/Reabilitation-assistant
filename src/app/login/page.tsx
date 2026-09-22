@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Activity, Loader2 } from 'lucide-react';
 import { SafetyBanner } from '@/components/SafetyBanner';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -119,6 +120,8 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+
+          <p className="text-center text-sm text-clinical-500 mt-4">New here? <Link href="/register" className="text-medical-700 font-medium">Create an account</Link></p>
         </div>
 
         <SafetyBanner />
