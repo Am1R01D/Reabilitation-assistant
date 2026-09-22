@@ -10,12 +10,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
     }
 
-    const supabase = getSupabaseAdmin();
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    // Signing in stores the patient session on that client. Keep database
+    // recovery operations on a fresh admin client so they retain RLS bypass.
+    const authClient = getSupabaseAdmin();
+    const { data: authData, error: authError } = await authClient.auth.signInWithPassword({ email, password });
     if (authError || !authData.session || !authData.user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
     const authenticatedEmail = authData.user.email?.trim().toLowerCase() || email.trim().toLowerCase();
+    const supabase = getSupabaseAdmin();
     let { data: user } = await supabase
       .from('users')
       .select('id, name, role, email')
