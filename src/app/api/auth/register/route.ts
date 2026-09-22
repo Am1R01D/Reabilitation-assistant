@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 import { getSupabaseAdmin } from '@/lib/supabase';
 
 async function getOrCreateClinicDoctor() {
@@ -13,17 +12,9 @@ async function getOrCreateClinicDoctor() {
     .maybeSingle();
   if (existing) return existing;
 
-  const email = 'clinic@rehabassist.local';
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email,
-    password: randomUUID(),
-    email_confirm: true,
-  });
-  if (authError || !authData.user) throw authError || new Error('Unable to create clinic profile');
-
   const { data: doctor, error } = await supabase
     .from('users')
-    .insert({ email, name: 'RehabAssist Clinic', role: 'doctor', password_hash: '', auth_user_id: authData.user.id })
+    .insert({ email: 'clinic@rehabassist.local', name: 'RehabAssist Clinic', role: 'doctor', password_hash: '' })
     .select('id')
     .single();
   if (error || !doctor) throw error || new Error('Unable to create clinic profile');
@@ -43,8 +34,10 @@ export async function POST(request: NextRequest) {
   let doctor: { id: number };
   try {
     doctor = await getOrCreateClinicDoctor();
-  } catch {
-    return NextResponse.json({ error: 'Unable to prepare clinic profile' }, { status: 500 });
+  } catch (error) {
+    console.error('Clinic profile setup failed:', error);
+    const detail = error instanceof Error ? error.message : 'Unknown Supabase error';
+    return NextResponse.json({ error: `Unable to prepare clinic profile: ${detail}` }, { status: 500 });
   }
 
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
