@@ -1,5 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { getSupabaseAdmin } from '@/lib/supabase';
+
+async function getOrCreateClinicDoctor() {
+  const supabase = getSupabaseAdmin();
+  const { data: existing } = await supabase
+    .from('users')
+    .select('id')
+    .eq('role', 'doctor')
+    .order('id')
+    .limit(1)
+    .maybeSingle();
+  if (existing) return existing;
+
+  const email = 'clinic@rehabassist.local';
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email,
+    password: randomUUID(),
+    email_confirm: true,
+  });
+  if (authError || !authData.user) throw authError || new Error('Unable to create clinic profile');
+
+  const { data: doctor, error } = await supabase
+    .from('users')
+    .insert({ email, name: 'RehabAssist Clinic', role: 'doctor', password_hash: '', auth_user_id: authData.user.id })
+    .select('id')
+    .single();
+  if (error || !doctor) throw error || new Error('Unable to create clinic profile');
+  return doctor;
+}
 
 export async function POST(request: NextRequest) {
   const { name, email, password, condition } = await request.json();
@@ -11,14 +40,12 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
-  const { data: doctor } = await supabase
-    .from('users')
-    .select('id')
-    .eq('role', 'doctor')
-    .order('id')
-    .limit(1)
-    .maybeSingle();
-  if (!doctor) return NextResponse.json({ error: 'No clinician is available yet. Run the Supabase seed command first.' }, { status: 503 });
+  let doctor: { id: number };
+  try {
+    doctor = await getOrCreateClinicDoctor();
+  } catch {
+    return NextResponse.json({ error: 'Unable to prepare clinic profile' }, { status: 500 });
+  }
 
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
