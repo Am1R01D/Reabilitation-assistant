@@ -8,6 +8,27 @@ import { SafetyBanner } from '@/components/SafetyBanner';
 import { getExerciseDefinition } from '@/lib/exercises';
 import { useLanguage } from '@/components/LanguageProvider';
 
+const russianFeedback: Record<string, string> = {
+  'Initializing camera...': 'Инициализация камеры...',
+  'Continue the movement slowly': 'Продолжайте движение медленно',
+  'Hand closed — now open': 'Кисть сжата — теперь разожмите',
+  'Hand open — now close': 'Кисть раскрыта — теперь сожмите',
+  'Show one hand clearly to the camera': 'Покажите одну кисть камере целиком',
+  'Arm bent — now straighten': 'Рука согнута — теперь выпрямите',
+  'Arm straight — now bend': 'Рука выпрямлена — теперь согните',
+  'Leg raised — lower slowly': 'Нога поднята — медленно опустите',
+  'Leg lowered — raise it straight': 'Нога опущена — поднимите её прямой',
+  'Keep your knee straight': 'Не сгибайте ногу в колене',
+  'Foot flexed — point away': 'Стопа согнута — потяните носок от себя',
+  'Foot pointed — pull it back': 'Носок вытянут — потяните стопу к себе',
+  'Move back so the required joints are visible': 'Отойдите назад, чтобы нужные суставы были видны',
+  'Camera ready — press Start': 'Камера готова — нажмите «Начать»',
+  'Failed to initialize MediaPipe': 'Не удалось запустить MediaPipe. Обновите страницу.',
+  'Camera access denied. Please allow camera permissions.': 'Нет доступа к камере. Разрешите доступ в настройках браузера и обновите страницу.',
+  'Camera access denied. Please allow camera permissions and refresh the page.': 'Нет доступа к камере. Разрешите доступ в настройках браузера и обновите страницу.',
+  'Session started': 'Тренировка началась',
+};
+
 export default function ExerciseSessionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -18,6 +39,7 @@ export default function ExerciseSessionPage() {
   const [saving, setSaving] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const lastSpokenRef = useRef('');
+  const feedbackText = language === 'ru' ? (russianFeedback[state.feedback] || state.feedback) : state.feedback;
   const [results, setResults] = useState<{
     reps: number;
     averageAngle: number;
@@ -27,11 +49,11 @@ export default function ExerciseSessionPage() {
   } | null>(null);
 
   useEffect(() => {
-    if (!voiceEnabled || !state.isRunning || !state.feedback || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    if (lastSpokenRef.current === state.feedback) return;
+    if (!voiceEnabled || !state.isRunning || !feedbackText || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (lastSpokenRef.current === feedbackText) return;
 
-    lastSpokenRef.current = state.feedback;
-    const utterance = new SpeechSynthesisUtterance(state.feedback);
+    lastSpokenRef.current = feedbackText;
+    const utterance = new SpeechSynthesisUtterance(feedbackText);
     utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
     utterance.rate = 0.95;
     const matchingVoice = window.speechSynthesis
@@ -41,7 +63,7 @@ export default function ExerciseSessionPage() {
 
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
-  }, [language, state.feedback, state.isRunning, voiceEnabled]);
+  }, [feedbackText, language, state.isRunning, voiceEnabled]);
 
   useEffect(() => () => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
@@ -189,7 +211,7 @@ export default function ExerciseSessionPage() {
           </div>
 
           <div className="card p-4 bg-medical-50 border-medical-200">
-            <p className="text-sm font-medium text-medical-900 text-center">{state.feedback}</p>
+            <p className="text-sm font-medium text-medical-900 text-center">{feedbackText}</p>
           </div>
 
           <div className="flex gap-2">

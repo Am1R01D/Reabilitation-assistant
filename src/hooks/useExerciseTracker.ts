@@ -181,7 +181,7 @@ export function useExerciseTracker(exerciseType: ExerciseType, language: 'en' | 
         await video.play();
         await initialize();
       })
-      .catch(() => setState((current) => ({ ...current, feedback: tr('Camera access denied. Please allow camera permissions.', 'Нет доступа к камере. Разрешите доступ в настройках браузера.') })));
+      .catch(() => setState((current) => ({ ...current, feedback: tr('Camera access denied. Please allow camera permissions and refresh the page.', 'Нет доступа к камере. Разрешите доступ в настройках браузера и обновите страницу.') })));
 
     return () => {
       cancelAnimationFrame(animationRef.current);
