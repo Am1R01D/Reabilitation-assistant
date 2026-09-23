@@ -48,7 +48,7 @@ export default function RegisterPage() {
             <option value="cast_removed">{text('Cast has been removed', 'Гипс уже снят')}</option>
           </select>
         </div>
-        <p className="text-xs text-medical-800 bg-medical-50 rounded-xl px-3 py-2">{text('Your clinic will assign a clinician after registration.', 'После регистрации клиника назначит врача.')}</p>
+        <p className="text-xs text-medical-800 bg-medical-50 rounded-xl px-3 py-2">{text('Your recovery plan will be created from the selected injury and cast status.', 'План восстановления будет создан по выбранной травме и статусу гипса.')}</p>
         {message && <p className={`text-sm rounded-xl px-3 py-2 ${messageSuccess ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{message}</p>}
         <button className="btn-primary w-full flex justify-center gap-2" disabled={loading}>{loading && <Loader2 className="w-4 h-4 animate-spin" />}{text('Create account', 'Создать аккаунт')}</button>
       </form>

@@ -53,6 +53,7 @@ export async function GET() {
     sessions,
     gamification,
     complianceRate,
+    patientName: session.name,
     condition: patient.condition,
     startDate: patient.start_date,
   });

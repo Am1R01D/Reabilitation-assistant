@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { SafetyBanner } from '@/components/SafetyBanner';
 import Link from 'next/link';
 import Image from 'next/image';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -47,12 +46,8 @@ export default function LoginPage() {
     }
   }
 
-  function quickLogin(role: 'patient' | 'doctor') {
-    if (role === 'patient') {
-      setEmail('john.doe@email.com');
-    } else {
-      setEmail('dr.smith@clinic.com');
-    }
+  function quickLogin() {
+    setEmail('john.doe@email.com');
     setPassword('password123');
   }
 
@@ -107,29 +102,20 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-4 pt-4 border-t border-clinical-200">
-            <p className="text-xs text-clinical-500 mb-2">{text('Demo accounts:', 'Демо-аккаунты:')}</p>
-            <div className="flex gap-2">
+            <p className="text-xs text-clinical-500 mb-2">{text('Try the patient demo:', 'Попробуйте демо пациента:')}</p>
+            <div>
               <button
                 type="button"
-                onClick={() => quickLogin('patient')}
-                className="text-xs btn-secondary flex-1 py-1.5"
+                onClick={quickLogin}
+                className="text-xs btn-secondary w-full py-1.5"
               >
-                {text('Patient Demo', 'Пациент')}
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('doctor')}
-                className="text-xs btn-secondary flex-1 py-1.5"
-              >
-                {text('Doctor Demo', 'Врач')}
+                {text('Patient Demo', 'Демо пациента')}
               </button>
             </div>
           </div>
 
           <p className="text-center text-sm text-clinical-500 mt-4">{text('New here?', 'Нет аккаунта?')} <Link href="/register" className="text-medical-700 font-medium">{text('Create an account', 'Зарегистрироваться')}</Link></p>
         </div>
-
-        <SafetyBanner />
       </div>
     </div>
   );
