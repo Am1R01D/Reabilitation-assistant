@@ -61,7 +61,8 @@ export default function ProgressPage() {
       : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="min-w-0 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-clinical-900">Your Progress</h1>
         <p className="text-clinical-500 mt-1">Track your recovery journey</p>
@@ -101,9 +102,13 @@ export default function ProgressPage() {
       <AIErrorBoundary>
         <GeminiAnalysisCard showRefresh />
       </AIErrorBoundary>
-      <AIErrorBoundary>
-        <GeminiChat />
-      </AIErrorBoundary>
+      </div>
+
+      <aside className="xl:sticky xl:top-6">
+        <AIErrorBoundary>
+          <GeminiChat />
+        </AIErrorBoundary>
+      </aside>
     </div>
   );
 }

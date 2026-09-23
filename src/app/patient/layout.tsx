@@ -17,7 +17,7 @@ export default async function PatientLayout({ children }: { children: React.Reac
   return (
     <div className="min-h-screen bg-clinical-50">
       <Navbar items={navItems} userName={session.name} role={session.role} />
-      <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+      <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>
     </div>
   );
 }

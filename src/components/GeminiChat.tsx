@@ -89,7 +89,7 @@ export function GeminiChat() {
   }
 
   return (
-    <section className="card p-5" aria-label="AI recovery chat">
+    <section className="card p-5 xl:flex xl:max-h-[calc(100vh-7rem)] xl:min-h-[34rem] xl:flex-col" aria-label="AI recovery chat">
       <div className="flex items-center gap-2">
         <Brain className="w-5 h-5 text-medical-600" />
         <div>
@@ -98,7 +98,7 @@ export function GeminiChat() {
         </div>
       </div>
 
-      <div className="mt-4 max-h-80 min-h-28 overflow-y-auto space-y-3 pr-1">
+      <div className="mt-4 max-h-80 min-h-28 overflow-y-auto space-y-3 pr-1 xl:max-h-none xl:min-h-0 xl:flex-1">
         {messages.length === 0 && !loading && (
           <p className="text-sm text-clinical-500 py-4 text-center">Ask about the recovery data shown in this app.</p>
         )}

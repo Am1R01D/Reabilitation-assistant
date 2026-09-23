@@ -85,7 +85,8 @@ export default function PatientDashboard() {
   );
 
   return (
-    <div className="space-y-6 page-enter">
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px] page-enter">
+      <div className="min-w-0 space-y-6">
       <div className="rounded-3xl bg-medical-800 text-white p-6 sm:p-8 relative overflow-hidden shadow-[0_18px_45px_rgba(28,76,72,0.22)]">
         <div className="absolute -right-12 -top-16 w-52 h-52 rounded-full bg-medical-500/35 blur-2xl" />
         <div className="relative">
@@ -197,9 +198,13 @@ export default function PatientDashboard() {
         </div>
       )}
 
-      <AIErrorBoundary>
-        <GeminiChat />
-      </AIErrorBoundary>
+      </div>
+
+      <aside className="xl:sticky xl:top-6">
+        <AIErrorBoundary>
+          <GeminiChat />
+        </AIErrorBoundary>
+      </aside>
     </div>
   );
 }
