@@ -59,7 +59,10 @@ export async function POST(request: NextRequest) {
   if (apiKey) {
     try {
       const context = `Condition: ${patient.condition}\nCheck-ins: ${checkIns.map((c) => `${c.date}: pain ${c.pain}/10, mobility ${c.mobility}/10, fatigue ${c.fatigue}/10, sleep ${c.sleep_quality}/10, swelling ${c.swelling}, exercises ${c.exercises_completed ? 'yes' : 'no'}`).join('; ') || 'none'}\nSessions: ${sessions.map((s) => `${s.created_at}: ${s.reps} reps, form ${Math.round(s.form_score)}%, ROM ${Math.round(s.range_of_motion)}°`).join('; ') || 'none'}`;
-      const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: 'gemini-2.0-flash', systemInstruction: CHAT_INSTRUCTIONS });
+      const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
+        model: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+        systemInstruction: CHAT_INSTRUCTIONS,
+      });
       const result = await model.generateContent(`${context}\n\nRecent conversation:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\nuser: ${message}\n\nRespond to the latest user message.`);
       reply = result.response.text().trim() || reply;
     } catch (error) {
