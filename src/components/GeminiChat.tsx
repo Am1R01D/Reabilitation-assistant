@@ -10,6 +10,17 @@ type ChatMessage = {
   created_at: string;
 };
 
+function isChatMessage(value: unknown): value is ChatMessage {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<ChatMessage>;
+  return (
+    typeof candidate.id === 'number' &&
+    (candidate.role === 'user' || candidate.role === 'assistant') &&
+    typeof candidate.content === 'string' &&
+    typeof candidate.created_at === 'string'
+  );
+}
+
 export function GeminiChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [historyReady, setHistoryReady] = useState(false);
@@ -21,9 +32,13 @@ export function GeminiChat() {
   useEffect(() => {
     try {
       const saved = JSON.parse(window.localStorage.getItem('rehab-gemini-chat') || '[]');
-      if (Array.isArray(saved)) setMessages(saved);
+      if (Array.isArray(saved)) setMessages(saved.filter(isChatMessage).slice(-40));
     } catch {
-      window.localStorage.removeItem('rehab-gemini-chat');
+      try {
+        window.localStorage.removeItem('rehab-gemini-chat');
+      } catch {
+        // Storage can be unavailable in private or restricted browser modes.
+      }
     } finally {
       setHistoryReady(true);
     }
@@ -31,10 +46,19 @@ export function GeminiChat() {
 
   useEffect(() => {
     if (!historyReady) return;
-    window.localStorage.setItem('rehab-gemini-chat', JSON.stringify(messages.slice(-40)));
+    try {
+      window.localStorage.setItem('rehab-gemini-chat', JSON.stringify(messages.slice(-40)));
+    } catch {
+      // The chat remains usable for the current page even without persistence.
+    }
   }, [historyReady, messages]);
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages, loading]);
+  useEffect(() => {
+    const target = endRef.current;
+    if (target && typeof target.scrollIntoView === 'function') {
+      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [messages, loading]);
 
   async function sendMessage(event: FormEvent) {
     event.preventDefault();

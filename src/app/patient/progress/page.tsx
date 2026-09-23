@@ -7,6 +7,7 @@ import { StatCard } from '@/components/StatCard';
 import { GeminiAnalysisCard } from '@/components/GeminiAnalysisCard';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import { GeminiChat } from '@/components/GeminiChat';
+import { AIErrorBoundary } from '@/components/AIErrorBoundary';
 
 export default function ProgressPage() {
   const [data, setData] = useState<{
@@ -97,8 +98,12 @@ export default function ProgressPage() {
 
       <ProgressCharts checkIns={data.checkIns} sessions={data.sessions} />
 
-      <GeminiAnalysisCard showRefresh />
-      <GeminiChat />
+      <AIErrorBoundary>
+        <GeminiAnalysisCard showRefresh />
+      </AIErrorBoundary>
+      <AIErrorBoundary>
+        <GeminiChat />
+      </AIErrorBoundary>
     </div>
   );
 }

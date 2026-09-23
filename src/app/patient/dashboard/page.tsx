@@ -15,6 +15,7 @@ import { StatCard } from '@/components/StatCard';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import { GeminiAnalysisCard } from '@/components/GeminiAnalysisCard';
 import { GeminiChat } from '@/components/GeminiChat';
+import { AIErrorBoundary } from '@/components/AIErrorBoundary';
 
 interface DashboardData {
   checkIns: Array<{
@@ -178,7 +179,9 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        <GeminiAnalysisCard showRefresh />
+        <AIErrorBoundary>
+          <GeminiAnalysisCard showRefresh />
+        </AIErrorBoundary>
       </div>
 
       {latestCheckIn && (
@@ -194,7 +197,9 @@ export default function PatientDashboard() {
         </div>
       )}
 
-      <GeminiChat />
+      <AIErrorBoundary>
+        <GeminiChat />
+      </AIErrorBoundary>
     </div>
   );
 }
