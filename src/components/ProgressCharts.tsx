@@ -11,6 +11,7 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { useLanguage } from './LanguageProvider';
 
 interface CheckInData {
   date: string;
@@ -34,6 +35,7 @@ interface ProgressChartsProps {
 }
 
 export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
+  const { text } = useLanguage();
   const painData = checkIns.map((c) => ({
     date: c.date.slice(5),
     pain: c.pain,
@@ -57,7 +59,7 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="card p-5">
-        <h3 className="font-semibold text-clinical-900 mb-4">Daily Check-in Trends</h3>
+        <h3 className="font-semibold text-clinical-900 mb-4">{text('Daily Check-in Trends', 'Динамика ежедневных чек-инов')}</h3>
         {painData.length > 0 ? (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={painData}>
@@ -72,12 +74,12 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-clinical-500 text-sm py-8 text-center">No check-in data yet</p>
+          <p className="text-clinical-500 text-sm py-8 text-center">{text('No check-in data yet', 'Данных чек-ина пока нет')}</p>
         )}
       </div>
 
       <div className="card p-5">
-        <h3 className="font-semibold text-clinical-900 mb-4">Exercise Compliance</h3>
+        <h3 className="font-semibold text-clinical-900 mb-4">{text('Exercise Compliance', 'Выполнение упражнений')}</h3>
         {complianceData.length > 0 ? (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={complianceData}>
@@ -94,7 +96,7 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
       </div>
 
       <div className="card p-5 lg:col-span-2">
-        <h3 className="font-semibold text-clinical-900 mb-4">Exercise Performance</h3>
+        <h3 className="font-semibold text-clinical-900 mb-4">{text('Exercise Performance', 'Результаты упражнений')}</h3>
         {sessionData.length > 0 ? (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={sessionData}>

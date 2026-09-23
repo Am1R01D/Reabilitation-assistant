@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Brain, Loader2, RefreshCw } from 'lucide-react';
 import type { GeminiRecoveryAnalysis } from '@/lib/types';
+import { useLanguage } from './LanguageProvider';
 
 interface GeminiAnalysisCardProps {
   initialAnalysis?: (GeminiRecoveryAnalysis & { createdAt?: string }) | null;
@@ -17,6 +18,7 @@ export function GeminiAnalysisCard({
 }: GeminiAnalysisCardProps) {
   const [analysis, setAnalysis] = useState(initialAnalysis);
   const [loading, setLoading] = useState(false);
+  const { text } = useLanguage();
 
   async function runAnalysis() {
     setLoading(true);
@@ -40,7 +42,7 @@ export function GeminiAnalysisCard({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-medical-600" />
-          <h3 className="font-semibold text-clinical-900">AI Recovery Analysis</h3>
+          <h3 className="font-semibold text-clinical-900">{text('AI Recovery Analysis', 'AI-анализ восстановления')}</h3>
         </div>
         {showRefresh && (
           <button
@@ -53,19 +55,19 @@ export function GeminiAnalysisCard({
             ) : (
               <RefreshCw className="w-4 h-4" />
             )}
-            {analysis ? 'Refresh' : 'Generate'}
+            {analysis ? text('Refresh', 'Обновить') : text('Generate', 'Создать')}
           </button>
         )}
       </div>
 
       <p className="text-xs text-clinical-500 mb-4">
-        AI monitoring insights — not medical advice. Your doctor makes all treatment decisions.
+        {text('AI monitoring insights — not medical advice. Your doctor makes all treatment decisions.', 'AI помогает анализировать данные, но не даёт медицинских рекомендаций. Решения принимает врач.')}
       </p>
 
       {!analysis ? (
         <div className="text-center py-8 text-clinical-500">
           <Brain className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Generate an analysis based on your recovery data</p>
+          <p className="text-sm">{text('Generate an analysis based on your recovery data', 'Создайте анализ на основе данных восстановления')}</p>
         </div>
       ) : (
         <div className="space-y-4">

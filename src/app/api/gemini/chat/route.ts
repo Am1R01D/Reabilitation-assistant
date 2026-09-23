@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const message = typeof body.message === 'string' ? body.message.trim() : '';
+  const responseLanguage = body.language === 'ru' ? 'Russian' : 'English';
   if (!message || message.length > 1000) return NextResponse.json({ error: 'Message must be between 1 and 1000 characters.' }, { status: 400 });
 
   const rawHistory: unknown[] = Array.isArray(body.history) ? body.history : [];
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
   ].filter(Boolean)));
 
   const context = `Condition: ${patient.condition}\nCheck-ins: ${checkIns.map((c) => `${c.date}: pain ${c.pain}/10, mobility ${c.mobility}/10, fatigue ${c.fatigue}/10, sleep ${c.sleep_quality}/10, swelling ${c.swelling}, exercises ${c.exercises_completed ? 'yes' : 'no'}`).join('; ') || 'none'}\nSessions: ${sessions.map((s) => `${s.created_at}: ${s.reps} reps, form ${Math.round(s.form_score)}%, ROM ${Math.round(s.range_of_motion)}°`).join('; ') || 'none'}`;
-  const prompt = `${context}\n\nRecent conversation:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\nuser: ${message}\n\nRespond to the latest user message.`;
+  const prompt = `${context}\n\nRecent conversation:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\nuser: ${message}\n\nRespond to the latest user message in ${responseLanguage}.`;
   const genAI = new GoogleGenerativeAI(apiKey);
 
   for (const modelName of modelCandidates) {

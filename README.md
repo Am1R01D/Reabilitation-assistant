@@ -1,4 +1,4 @@
-# RehabAssist — Home Rehabilitation Platform
+# Re.assist — Home Rehabilitation Platform
 
 A MedTech MVP for doctor-prescribed physical therapy with computer vision exercise tracking and AI-assisted recovery monitoring.
 

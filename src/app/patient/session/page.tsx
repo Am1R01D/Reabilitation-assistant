@@ -6,11 +6,19 @@ import { Camera, Loader2, Play, Square, RotateCcw } from 'lucide-react';
 import { useExerciseTracker } from '@/hooks/useExerciseTracker';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import { getExerciseDefinition } from '@/lib/exercises';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export default function ExerciseSessionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const exercise = getExerciseDefinition(searchParams.get('exercise'));
+  const { text } = useLanguage();
+  const exerciseName = ({
+    finger_flexion: text('Finger Flexion', 'Сгибание пальцев'),
+    bicep_curl: text('Bicep Curl', 'Сгибание руки'),
+    ankle_pumps: text('Ankle Movements', 'Движения стопой'),
+    straight_leg_raise: text('Straight Leg Raise', 'Подъём прямой ноги'),
+  } as const)[exercise.id];
   const { videoRef, canvasRef, state, startSession, stopSession } = useExerciseTracker(exercise.id);
   const [saving, setSaving] = useState(false);
   const [results, setResults] = useState<{
@@ -44,8 +52,8 @@ export default function ExerciseSessionPage() {
     return (
       <div className="max-w-lg mx-auto space-y-6">
         <div className="text-center py-6">
-          <h2 className="text-2xl font-bold text-clinical-900">{exercise.name} Complete</h2>
-          <p className="text-clinical-500 mt-1">Great work on your rehabilitation!</p>
+          <h2 className="text-2xl font-bold text-clinical-900">{exerciseName}: {text('complete', 'завершено')}</h2>
+          <p className="text-clinical-500 mt-1">{text('Great work on your rehabilitation!', 'Отличная работа!')}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -66,7 +74,7 @@ export default function ExerciseSessionPage() {
             <RotateCcw className="w-4 h-4" /> Again
           </button>
           <button onClick={() => router.push('/patient/dashboard')} className="btn-primary flex-1">
-            Dashboard
+            {text('Dashboard', 'Главная')}
           </button>
         </div>
       </div>
@@ -76,12 +84,12 @@ export default function ExerciseSessionPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-clinical-900">{exercise.name}</h1>
+        <h1 className="text-2xl font-bold text-clinical-900">{exerciseName}</h1>
         <p className="text-clinical-500 mt-1">{exercise.cameraInstruction}</p>
       </div>
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <strong>Demo version:</strong> camera tracking currently supports a limited set of rehabilitation exercises.
+        <strong>{text('Demo version:', 'Демо-версия:')}</strong> {text('camera tracking supports a limited set of exercises.', 'камера поддерживает ограниченный набор упражнений.')}
       </div>
 
       <SafetyBanner />
@@ -104,7 +112,7 @@ export default function ExerciseSessionPage() {
 
         <div className="space-y-4">
           <div className="card p-5 text-center">
-            <p className="text-sm text-clinical-500 mb-1">Repetitions</p>
+            <p className="text-sm text-clinical-500 mb-1">{text('Repetitions', 'Повторения')}</p>
             <p className="text-5xl font-bold text-medical-600">{state.reps}</p>
           </div>
 
@@ -115,12 +123,12 @@ export default function ExerciseSessionPage() {
                 <p className="text-2xl font-bold text-clinical-900">{state.jointAngle}°</p>
               </div>
               <div>
-                <p className="text-xs text-clinical-500">Form Score</p>
+                <p className="text-xs text-clinical-500">{text('Form Score', 'Техника')}</p>
                 <p className="text-2xl font-bold text-clinical-900">{state.formScore}%</p>
               </div>
             </div>
             <div className="mt-4 text-center">
-              <p className="text-xs text-clinical-500 mb-1">Movement State</p>
+              <p className="text-xs text-clinical-500 mb-1">{text('Movement State', 'Фаза движения')}</p>
               <span
                 className={`inline-block px-3 py-1 rounded-full text-sm font-medium capitalize ${
                   state.movementState === 'contracted' || state.movementState === 'moving'
@@ -146,7 +154,7 @@ export default function ExerciseSessionPage() {
                 disabled={!state.isReady}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
-                <Play className="w-4 h-4" /> Start Session
+                <Play className="w-4 h-4" /> {text('Start Session', 'Начать тренировку')}
               </button>
             ) : (
               <button
@@ -159,7 +167,7 @@ export default function ExerciseSessionPage() {
                 ) : (
                   <Square className="w-4 h-4" />
                 )}
-                End Session
+                {text('End Session', 'Завершить')}
               </button>
             )}
           </div>

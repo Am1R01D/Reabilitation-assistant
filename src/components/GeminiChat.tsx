@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Brain, Send } from 'lucide-react';
+import { useLanguage } from './LanguageProvider';
 
 type ChatMessage = {
   id: number;
@@ -30,6 +31,7 @@ export function GeminiChat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
+  const { text, language } = useLanguage();
 
   useEffect(() => {
     let cancelled = false;
@@ -106,6 +108,7 @@ export function GeminiChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: content,
+          language,
           history: requestHistory.map(({ role, content: previousContent }) => ({ role, content: previousContent })),
         }),
       });
@@ -130,14 +133,14 @@ export function GeminiChat() {
       <div className="flex items-center gap-2">
         <Brain className="w-5 h-5 text-medical-600" />
         <div>
-          <h2 className="font-semibold text-clinical-900">Ask Recovery Assistant</h2>
-          <p className="text-xs text-clinical-500">One shared Gemini chat for your dashboard and progress.</p>
+          <h2 className="font-semibold text-clinical-900">{text('Ask Recovery Assistant', 'Спросить AI-помощника')}</h2>
+          <p className="text-xs text-clinical-500">{text('Shared chat for your dashboard and progress.', 'Общий чат для главной страницы и прогресса.')}</p>
         </div>
       </div>
 
       <div className="mt-4 max-h-80 min-h-28 overflow-y-auto space-y-3 pr-1 xl:max-h-none xl:min-h-0 xl:flex-1">
         {messages.length === 0 && !loading && (
-          <p className="text-sm text-clinical-500 py-4 text-center">Ask about the recovery data shown in this app.</p>
+          <p className="text-sm text-clinical-500 py-4 text-center">{text('Ask about your recovery data.', 'Спросите о данных вашего восстановления.')}</p>
         )}
         {messages.map((message) => (
           <div key={message.id} className={`chat-message-enter flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
@@ -146,8 +149,8 @@ export function GeminiChat() {
             }`}>
               {message.content}
             </p>
-            {message.status === 'sending' && <span className="mt-1 text-[10px] text-clinical-400">Sending…</span>}
-            {message.status === 'failed' && <span className="mt-1 text-[10px] text-red-500">Not sent</span>}
+            {message.status === 'sending' && <span className="mt-1 text-[10px] text-clinical-400">{text('Sending…', 'Отправка…')}</span>}
+            {message.status === 'failed' && <span className="mt-1 text-[10px] text-red-500">{text('Not sent', 'Не отправлено')}</span>}
           </div>
         ))}
         {loading && (
@@ -168,14 +171,14 @@ export function GeminiChat() {
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           maxLength={1000}
-          placeholder="Ask about your check-ins or progress…"
+          placeholder={text('Ask about your check-ins or progress…', 'Спросите о чек-инах или прогрессе…')}
           className="min-w-0 flex-1 rounded-lg border border-clinical-200 px-3 py-2 text-sm focus:border-medical-500 focus:outline-none"
         />
         <button type="submit" disabled={loading || !question.trim()} className="btn-primary px-3" aria-label="Send message">
           <Send className="w-4 h-4" />
         </button>
       </form>
-      <p className="mt-2 text-xs text-clinical-400">For monitoring information only — not medical advice.</p>
+      <p className="mt-2 text-xs text-clinical-400">{text('For monitoring only — not medical advice.', 'Только для наблюдения — не медицинская рекомендация.')}</p>
     </section>
   );
 }

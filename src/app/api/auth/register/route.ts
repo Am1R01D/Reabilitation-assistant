@@ -14,7 +14,7 @@ async function getOrCreateClinicDoctor() {
 
   const { data: doctor, error } = await supabase
     .from('users')
-    .insert({ email: 'clinic@rehabassist.local', name: 'RehabAssist Clinic', role: 'doctor', password_hash: '' })
+    .insert({ email: 'clinic@rehabassist.local', name: 'Re.assist Clinic', role: 'doctor', password_hash: '' })
     .select('id')
     .single();
   if (error || !doctor) throw error || new Error('Unable to create clinic profile');

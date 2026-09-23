@@ -8,6 +8,7 @@ import { GeminiAnalysisCard } from '@/components/GeminiAnalysisCard';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import { GeminiChat } from '@/components/GeminiChat';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export default function ProgressPage() {
   const [data, setData] = useState<{
@@ -24,6 +25,7 @@ export default function ProgressPage() {
     complianceRate: number;
   } | null>(null);
   const [error, setError] = useState('');
+  const { text } = useLanguage();
 
   useEffect(() => {
     fetch('/api/progress', { cache: 'no-store' })
@@ -64,33 +66,33 @@ export default function ProgressPage() {
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="min-w-0 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-clinical-900">Your Progress</h1>
-        <p className="text-clinical-500 mt-1">Track your recovery journey</p>
+        <h1 className="text-2xl font-bold text-clinical-900">{text('Your Progress', 'Ваш прогресс')}</h1>
+        <p className="text-clinical-500 mt-1">{text('Track your recovery journey', 'Следите за процессом восстановления')}</p>
       </div>
 
       <SafetyBanner />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Compliance"
+          title={text('Compliance', 'Выполнение плана')}
           value={`${Math.round(data.complianceRate)}%`}
           subtitle="Exercise check-ins"
           icon={Target}
         />
         <StatCard
-          title="Total Reps"
+          title={text('Total Reps', 'Всего повторений')}
           value={totalReps}
           subtitle={`${data.sessions.length} sessions`}
           icon={TrendingUp}
         />
         <StatCard
-          title="Avg Form Score"
+          title={text('Avg Form Score', 'Средняя техника')}
           value={`${avgForm}%`}
           subtitle={`ROM: ${avgRom}°`}
           icon={Award}
         />
         <StatCard
-          title="Recovery Streak"
+          title={text('Recovery Streak', 'Серия восстановления')}
           value={`${data.gamification.recovery_streak}d`}
           subtitle={`Exercise: ${data.gamification.exercise_streak}d`}
           icon={Flame}

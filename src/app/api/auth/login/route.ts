@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
           .from('users')
           .insert({
             email: 'clinic@rehabassist.local',
-            name: 'RehabAssist Clinic',
+            name: 'Re.assist Clinic',
             role: 'doctor',
             password_hash: '',
           })

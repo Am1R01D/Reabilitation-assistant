@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Activity, Loader2 } from 'lucide-react';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import Link from 'next/link';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { text } = useLanguage();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,20 +57,21 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-medical-50 via-white to-clinical-100 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute right-4 top-4 z-10"><LanguageSwitcher /></div>
       <div className="absolute w-80 h-80 -left-32 -bottom-32 rounded-full bg-medical-200/50 blur-3xl" />
       <div className="w-full max-w-md space-y-6 page-enter relative">
         <div className="text-center">
           <div className="w-14 h-14 bg-medical-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_12px_25px_rgba(34,117,108,0.28)] float-gentle">
             <Activity className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-clinical-900">RehabAssist</h1>
-          <p className="text-clinical-500 mt-1">Home Rehabilitation Platform</p>
+          <h1 className="text-2xl font-bold text-clinical-900">Re.assist</h1>
+          <p className="text-clinical-500 mt-1">{text('Home Rehabilitation Platform', 'Платформа домашней реабилитации')}</p>
         </div>
 
         <div className="card p-6 sm:p-7">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="label" htmlFor="email">Email</label>
+              <label className="label" htmlFor="email">{text('Email', 'Электронная почта')}</label>
               <input
                 id="email"
                 type="email"
@@ -79,7 +83,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="label" htmlFor="password">Password</label>
+              <label className="label" htmlFor="password">{text('Password', 'Пароль')}</label>
               <input
                 id="password"
                 type="password"
@@ -97,31 +101,31 @@ export default function LoginPage() {
 
             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              Sign In
+              {text('Sign In', 'Войти')}
             </button>
           </form>
 
           <div className="mt-4 pt-4 border-t border-clinical-200">
-            <p className="text-xs text-clinical-500 mb-2">Demo accounts:</p>
+            <p className="text-xs text-clinical-500 mb-2">{text('Demo accounts:', 'Демо-аккаунты:')}</p>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => quickLogin('patient')}
                 className="text-xs btn-secondary flex-1 py-1.5"
               >
-                Patient Demo
+                {text('Patient Demo', 'Пациент')}
               </button>
               <button
                 type="button"
                 onClick={() => quickLogin('doctor')}
                 className="text-xs btn-secondary flex-1 py-1.5"
               >
-                Doctor Demo
+                {text('Doctor Demo', 'Врач')}
               </button>
             </div>
           </div>
 
-          <p className="text-center text-sm text-clinical-500 mt-4">New here? <Link href="/register" className="text-medical-700 font-medium">Create an account</Link></p>
+          <p className="text-center text-sm text-clinical-500 mt-4">{text('New here?', 'Нет аккаунта?')} <Link href="/register" className="text-medical-700 font-medium">{text('Create an account', 'Зарегистрироваться')}</Link></p>
         </div>
 
         <SafetyBanner />

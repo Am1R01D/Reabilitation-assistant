@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Activity, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useLanguage } from './LanguageProvider';
 
 interface NavItem {
   href: string;
@@ -21,6 +23,14 @@ export function Navbar({ items, userName, role }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { text } = useLanguage();
+  const translatedLabel = (label: string) => ({
+    Dashboard: text('Dashboard', 'Главная'),
+    'Check-in': text('Check-in', 'Чек-ин'),
+    Exercises: text('Exercises', 'Упражнения'),
+    Progress: text('Progress', 'Прогресс'),
+    Patients: text('Patients', 'Пациенты'),
+  }[label] || label);
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -35,7 +45,7 @@ export function Navbar({ items, userName, role }: NavbarProps) {
             <div className="w-9 h-9 bg-medical-600 rounded-xl flex items-center justify-center shadow-[0_5px_12px_rgba(34,117,108,0.25)]">
               <Activity className="w-5 h-5 text-white" />
             </div>
-            <span className="font-semibold text-clinical-900 hidden sm:block">RehabAssist</span>
+            <span className="font-semibold text-clinical-900 hidden sm:block">Re.assist</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-1">
@@ -50,12 +60,13 @@ export function Navbar({ items, userName, role }: NavbarProps) {
                     : 'text-clinical-600 hover:bg-clinical-50'
                 )}
               >
-                {item.label}
+                {translatedLabel(item.label)}
               </Link>
             ))}
           </div>
 
           <div className="flex items-center gap-3">
+            <LanguageSwitcher compact />
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-clinical-900">{userName}</p>
               <p className="text-xs text-clinical-500 capitalize">{role}</p>
@@ -63,7 +74,7 @@ export function Navbar({ items, userName, role }: NavbarProps) {
             <button
               onClick={handleLogout}
               className="p-2 text-clinical-500 hover:text-clinical-700 hover:bg-clinical-50 rounded-xl transition-colors"
-              title="Sign out"
+              title={text('Sign out', 'Выйти')}
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -90,7 +101,7 @@ export function Navbar({ items, userName, role }: NavbarProps) {
                     : 'text-clinical-600'
                 )}
               >
-                {item.label}
+                {translatedLabel(item.label)}
               </Link>
             ))}
           </div>

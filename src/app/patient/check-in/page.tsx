@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { SafetyBanner } from '@/components/SafetyBanner';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export default function CheckInPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function CheckInPage() {
   const [submitted, setSubmitted] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(false);
+  const { text } = useLanguage();
 
   useEffect(() => {
     fetch('/api/check-in')
@@ -64,10 +66,10 @@ export default function CheckInPage() {
     return (
       <div className="max-w-lg mx-auto text-center py-12">
         <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-clinical-900">Check-in Complete</h2>
-        <p className="text-clinical-500 mt-2">You&apos;ve already checked in today. Great job!</p>
+        <h2 className="text-xl font-bold text-clinical-900">{text('Check-in Complete', 'Чек-ин завершён')}</h2>
+        <p className="text-clinical-500 mt-2">{text("You've already checked in today. Great job!", 'Сегодняшний чек-ин уже заполнен!')}</p>
         <button onClick={returnToDashboard} className="btn-primary mt-6">
-          Back to Dashboard
+          {text('Back to Dashboard', 'Вернуться на главную')}
         </button>
       </div>
     );
@@ -78,12 +80,12 @@ export default function CheckInPage() {
       <div className="max-w-lg mx-auto space-y-6">
         <div className="text-center py-8">
           <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-clinical-900">Check-in Recorded</h2>
-          <p className="text-clinical-500 mt-2">Your daily recovery data has been saved.</p>
+          <h2 className="text-xl font-bold text-clinical-900">{text('Check-in Recorded', 'Чек-ин сохранён')}</h2>
+          <p className="text-clinical-500 mt-2">{text('Your daily recovery data has been saved.', 'Данные о восстановлении сохранены.')}</p>
         </div>
         {showWarning && <SafetyBanner variant="warning" />}
         <button onClick={returnToDashboard} className="btn-primary w-full">
-          Back to Dashboard
+          {text('Back to Dashboard', 'Вернуться на главную')}
         </button>
       </div>
     );
@@ -92,20 +94,20 @@ export default function CheckInPage() {
   return (
     <div className="max-w-lg mx-auto space-y-6 page-enter">
       <div>
-        <h1 className="text-2xl font-bold text-clinical-900">Daily Check-in</h1>
-        <p className="text-clinical-500 mt-1">How are you feeling today?</p>
+        <h1 className="text-2xl font-bold text-clinical-900">{text('Daily Check-in', 'Ежедневный чек-ин')}</h1>
+        <p className="text-clinical-500 mt-1">{text('How are you feeling today?', 'Как вы себя чувствуете сегодня?')}</p>
       </div>
 
       <SafetyBanner />
 
       <form onSubmit={handleSubmit} className="card p-6 sm:p-7 space-y-6">
-        <ScaleInput label="Pain Level" value={pain} onChange={setPain} min={0} max={10} lowLabel="No pain" highLabel="Severe" />
-        <ScaleInput label="Mobility" value={mobility} onChange={setMobility} min={0} max={10} lowLabel="Limited" highLabel="Full" />
-        <ScaleInput label="Fatigue" value={fatigue} onChange={setFatigue} min={0} max={10} lowLabel="Energetic" highLabel="Exhausted" />
-        <ScaleInput label="Sleep Quality" value={sleepQuality} onChange={setSleepQuality} min={0} max={10} lowLabel="Poor" highLabel="Excellent" />
+        <ScaleInput label={text('Pain Level', 'Уровень боли')} value={pain} onChange={setPain} min={0} max={10} lowLabel={text('No pain', 'Нет боли')} highLabel={text('Severe', 'Сильная')} />
+        <ScaleInput label={text('Mobility', 'Подвижность')} value={mobility} onChange={setMobility} min={0} max={10} lowLabel={text('Limited', 'Ограничена')} highLabel={text('Full', 'Полная')} />
+        <ScaleInput label={text('Fatigue', 'Усталость')} value={fatigue} onChange={setFatigue} min={0} max={10} lowLabel={text('Energetic', 'Бодро')} highLabel={text('Exhausted', 'Сильная')} />
+        <ScaleInput label={text('Sleep Quality', 'Качество сна')} value={sleepQuality} onChange={setSleepQuality} min={0} max={10} lowLabel={text('Poor', 'Плохое')} highLabel={text('Excellent', 'Отличное')} />
 
         <div>
-          <label className="label">Swelling</label>
+          <label className="label">{text('Swelling', 'Отёк')}</label>
           <div className="grid grid-cols-3 gap-2">
             {(['none', 'mild', 'severe'] as const).map((level) => (
               <button
@@ -127,7 +129,7 @@ export default function CheckInPage() {
         </div>
 
         <div>
-          <label className="label">Exercises Completed Today?</label>
+          <label className="label">{text('Exercises Completed Today?', 'Упражнения сегодня выполнены?')}</label>
           <div className="grid grid-cols-2 gap-2">
             {[true, false].map((val) => (
               <button
@@ -140,7 +142,7 @@ export default function CheckInPage() {
                     : 'border-clinical-200 text-clinical-600 hover:bg-clinical-50'
                 }`}
               >
-                {val ? 'Yes' : 'No'}
+                {val ? text('Yes', 'Да') : text('No', 'Нет')}
               </button>
             ))}
           </div>
@@ -148,7 +150,7 @@ export default function CheckInPage() {
 
         <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-          Submit Check-in
+          {text('Submit Check-in', 'Сохранить чек-ин')}
         </button>
       </form>
     </div>
