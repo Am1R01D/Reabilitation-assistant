@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getPatientByUserId, getSession } from '@/lib/auth';
-import { getDb } from '@/lib/db';
+import { getSupabaseAdmin } from '@/lib/supabase';
 import type { CheckIn, ExerciseSession } from '@/lib/types';
 
 const CHAT_INSTRUCTIONS = `You are a rehabilitation monitoring assistant. Answer briefly using the patient's recorded check-ins and exercise sessions when relevant. You may summarize trends, explain the app's metrics, and suggest questions to discuss with a clinician. Do not diagnose conditions, prescribe medication, change treatment plans, or present medical advice as a definitive conclusion. If the user reports urgent symptoms such as severe pain, swelling, breathing problems, or a new emergency, tell them to contact their clinician or local emergency services promptly.`;
@@ -19,12 +19,7 @@ export async function GET() {
   if (!session || session.role !== 'patient') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const patient = await getPatientByUserId(session.userId);
   if (!patient) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
-
-  const messages = getDb()
-    .prepare("SELECT id, role, content, created_at FROM gemini_chat_messages WHERE patient_id = ? ORDER BY id DESC LIMIT 40")
-    .all(patient.id)
-    .reverse();
-  return NextResponse.json({ messages });
+  return NextResponse.json({ messages: [] });
 }
 
 export async function POST(request: NextRequest) {
@@ -37,12 +32,27 @@ export async function POST(request: NextRequest) {
   const message = typeof body.message === 'string' ? body.message.trim() : '';
   if (!message || message.length > 1000) return NextResponse.json({ error: 'Message must be between 1 and 1000 characters.' }, { status: 400 });
 
-  const db = getDb();
-  const userResult = db.prepare("INSERT INTO gemini_chat_messages (patient_id, role, content) VALUES (?, 'user', ?)").run(patient.id, message);
-  const userMessage = db.prepare('SELECT id, role, content, created_at FROM gemini_chat_messages WHERE id = ?').get(userResult.lastInsertRowid);
-  const checkIns = db.prepare('SELECT * FROM check_ins WHERE patient_id = ? ORDER BY date DESC LIMIT 14').all(patient.id) as unknown as CheckIn[];
-  const sessions = db.prepare('SELECT * FROM exercise_sessions WHERE patient_id = ? ORDER BY created_at DESC LIMIT 10').all(patient.id) as unknown as ExerciseSession[];
-  const history = db.prepare('SELECT role, content FROM gemini_chat_messages WHERE patient_id = ? ORDER BY id DESC LIMIT 12').all(patient.id).reverse() as Array<{ role: string; content: string }>;
+  const rawHistory: unknown[] = Array.isArray(body.history) ? body.history : [];
+  const history = rawHistory
+    .filter((item): item is { role: 'user' | 'assistant'; content: string } => {
+      if (!item || typeof item !== 'object') return false;
+      const candidate = item as { role?: unknown; content?: unknown };
+      return (candidate.role === 'user' || candidate.role === 'assistant') && typeof candidate.content === 'string';
+    })
+    .slice(-12)
+    .map((item) => ({ role: item.role, content: item.content.slice(0, 2000) }));
+
+  const supabase = getSupabaseAdmin();
+  const [checkInsResult, sessionsResult] = await Promise.all([
+    supabase.from('check_ins').select('*').eq('patient_id', patient.id).order('date', { ascending: false }).limit(14),
+    supabase.from('exercise_sessions').select('*').eq('patient_id', patient.id).order('created_at', { ascending: false }).limit(10),
+  ]);
+  if (checkInsResult.error || sessionsResult.error) {
+    console.error('Gemini chat context load failed', checkInsResult.error || sessionsResult.error);
+    return NextResponse.json({ error: 'Unable to load recovery context' }, { status: 500 });
+  }
+  const checkIns = (checkInsResult.data ?? []) as CheckIn[];
+  const sessions = (sessionsResult.data ?? []) as ExerciseSession[];
 
   let reply = fallbackReply(message, checkIns);
   const apiKey = process.env.GEMINI_API_KEY;
@@ -50,14 +60,15 @@ export async function POST(request: NextRequest) {
     try {
       const context = `Condition: ${patient.condition}\nCheck-ins: ${checkIns.map((c) => `${c.date}: pain ${c.pain}/10, mobility ${c.mobility}/10, fatigue ${c.fatigue}/10, sleep ${c.sleep_quality}/10, swelling ${c.swelling}, exercises ${c.exercises_completed ? 'yes' : 'no'}`).join('; ') || 'none'}\nSessions: ${sessions.map((s) => `${s.created_at}: ${s.reps} reps, form ${Math.round(s.form_score)}%, ROM ${Math.round(s.range_of_motion)}°`).join('; ') || 'none'}`;
       const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: 'gemini-2.0-flash', systemInstruction: CHAT_INSTRUCTIONS });
-      const result = await model.generateContent(`${context}\n\nRecent conversation:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\n\nRespond to the latest user message.`);
+      const result = await model.generateContent(`${context}\n\nRecent conversation:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\nuser: ${message}\n\nRespond to the latest user message.`);
       reply = result.response.text().trim() || reply;
     } catch (error) {
       console.error('Gemini chat failed:', error);
     }
   }
 
-  const assistantResult = db.prepare("INSERT INTO gemini_chat_messages (patient_id, role, content) VALUES (?, 'assistant', ?)").run(patient.id, reply);
-  const assistantMessage = db.prepare('SELECT id, role, content, created_at FROM gemini_chat_messages WHERE id = ?').get(assistantResult.lastInsertRowid);
+  const now = new Date().toISOString();
+  const userMessage = { id: Date.now(), role: 'user' as const, content: message, created_at: now };
+  const assistantMessage = { id: Date.now() + 1, role: 'assistant' as const, content: reply, created_at: now };
   return NextResponse.json({ userMessage, assistantMessage });
 }

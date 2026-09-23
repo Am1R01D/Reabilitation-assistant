@@ -12,17 +12,27 @@ type ChatMessage = {
 
 export function GeminiChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [historyReady, setHistoryReady] = useState(false);
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch('/api/gemini/chat', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((data) => setMessages(data.messages || []))
-      .catch(() => setError('Unable to load chat history.'));
+    try {
+      const saved = JSON.parse(window.localStorage.getItem('rehab-gemini-chat') || '[]');
+      if (Array.isArray(saved)) setMessages(saved);
+    } catch {
+      window.localStorage.removeItem('rehab-gemini-chat');
+    } finally {
+      setHistoryReady(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!historyReady) return;
+    window.localStorage.setItem('rehab-gemini-chat', JSON.stringify(messages.slice(-40)));
+  }, [historyReady, messages]);
 
   useEffect(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages, loading]);
 
@@ -38,7 +48,10 @@ export function GeminiChat() {
       const res = await fetch('/api/gemini/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: content }),
+        body: JSON.stringify({
+          message: content,
+          history: messages.slice(-12).map(({ role, content: previousContent }) => ({ role, content: previousContent })),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Unable to send message.');

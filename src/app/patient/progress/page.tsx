@@ -22,15 +22,31 @@ export default function ProgressPage() {
     gamification: { recovery_streak: number; exercise_streak: number; weekly_goal: number; weekly_completed: number };
     complianceRate: number;
   } | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetch('/api/progress', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then(setData);
+      .then(async (response) => {
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error || 'Unable to load progress data.');
+        return body;
+      })
+      .then(setData)
+      .catch((loadError) => setError(loadError instanceof Error ? loadError.message : 'Unable to load progress data.'));
   }, []);
 
-  if (!data) {
+  if (!data && !error) {
     return <div className="text-center py-20 text-clinical-500 animate-pulse">Loading progress...</div>;
+  }
+
+  if (error || !data) {
+    return (
+      <div className="card max-w-xl mx-auto p-6 text-center">
+        <h1 className="text-lg font-semibold text-clinical-900">Progress could not be loaded</h1>
+        <p className="mt-2 text-sm text-clinical-600">{error}</p>
+        <button onClick={() => window.location.reload()} className="btn-primary mt-4">Try again</button>
+      </div>
+    );
   }
 
   const totalReps = data.sessions.reduce((s, x) => s + x.reps, 0);

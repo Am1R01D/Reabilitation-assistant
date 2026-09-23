@@ -41,19 +41,26 @@ interface DashboardData {
 export default function PatientDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function load() {
-      const [progressRes, checkInRes] = await Promise.all([
-        fetch('/api/progress', { cache: 'no-store' }),
-        fetch('/api/check-in', { cache: 'no-store' }),
-      ]);
-      const progress = await progressRes.json();
-      const checkIn = await checkInRes.json();
-      // Progress is the canonical, chronologically sorted data source. The
-      // check-in endpoint is only used here for today's completion state.
-      setData({ ...progress, todayCheckIn: checkIn.todayCheckIn });
-      setLoading(false);
+      try {
+        const [progressRes, checkInRes] = await Promise.all([
+          fetch('/api/progress', { cache: 'no-store' }),
+          fetch('/api/check-in', { cache: 'no-store' }),
+        ]);
+        const progress = await progressRes.json();
+        const checkIn = await checkInRes.json();
+        if (!progressRes.ok || !checkInRes.ok) {
+          throw new Error(progress.error || checkIn.error || 'Unable to load dashboard data.');
+        }
+        setData({ ...progress, todayCheckIn: checkIn.todayCheckIn });
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'Unable to load dashboard data.');
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -66,7 +73,9 @@ export default function PatientDashboard() {
     );
   }
 
-  if (!data) return null;
+  if (error || !data) {
+    return <DataError message={error || 'Dashboard data is unavailable.'} />;
+  }
 
   const latestCheckIn = data.checkIns[data.checkIns.length - 1];
   const latestSession = data.sessions[0];
@@ -195,6 +204,16 @@ function CheckInDetail({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg bg-clinical-50 p-3">
       <p className="text-xs text-clinical-500">{label}</p>
       <p className="mt-1 font-medium capitalize text-clinical-900">{value}</p>
+    </div>
+  );
+}
+
+function DataError({ message }: { message: string }) {
+  return (
+    <div className="card max-w-xl mx-auto p-6 text-center">
+      <h1 className="text-lg font-semibold text-clinical-900">Dashboard could not be loaded</h1>
+      <p className="mt-2 text-sm text-clinical-600">{message}</p>
+      <button onClick={() => window.location.reload()} className="btn-primary mt-4">Try again</button>
     </div>
   );
 }

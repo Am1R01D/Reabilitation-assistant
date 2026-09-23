@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPatientByUserId, getSession } from '@/lib/auth';
-import { getDb } from '@/lib/db';
-import { getGamification } from '@/lib/gamification';
-import type { CheckIn, ExerciseSession } from '@/lib/types';
+import { getSupabaseAdmin } from '@/lib/supabase';
 
 export async function GET() {
   const session = await getSession();
@@ -13,16 +11,37 @@ export async function GET() {
   const patient = await getPatientByUserId(session.userId);
   if (!patient) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
 
-  const db = getDb();
-  const checkIns = db
-    .prepare('SELECT * FROM check_ins WHERE patient_id = ? ORDER BY date ASC')
-    .all(patient.id) as unknown as CheckIn[];
+  const supabase = getSupabaseAdmin();
+  const [checkInsResult, sessionsResult, gamificationResult] = await Promise.all([
+    supabase.from('check_ins').select('*').eq('patient_id', patient.id).order('date', { ascending: true }),
+    supabase.from('exercise_sessions').select('*').eq('patient_id', patient.id).order('created_at', { ascending: true }),
+    supabase.from('gamification').select('*').eq('patient_id', patient.id).maybeSingle(),
+  ]);
 
-  const sessions = db
-    .prepare('SELECT * FROM exercise_sessions WHERE patient_id = ? ORDER BY created_at ASC')
-    .all(patient.id) as unknown as ExerciseSession[];
+  if (checkInsResult.error || sessionsResult.error || gamificationResult.error) {
+    console.error('Progress data load failed', {
+      checkIns: checkInsResult.error,
+      sessions: sessionsResult.error,
+      gamification: gamificationResult.error,
+    });
+    return NextResponse.json({ error: 'Unable to load progress data' }, { status: 500 });
+  }
 
-  const gamification = getGamification(patient.id);
+  const checkIns = checkInsResult.data ?? [];
+  const sessions = sessionsResult.data ?? [];
+  let gamification = gamificationResult.data;
+  if (!gamification) {
+    const created = await supabase
+      .from('gamification')
+      .insert({ patient_id: patient.id })
+      .select('*')
+      .single();
+    if (created.error) {
+      console.error('Gamification initialization failed', created.error);
+      return NextResponse.json({ error: 'Unable to initialize progress data' }, { status: 500 });
+    }
+    gamification = created.data;
+  }
 
   const complianceRate =
     checkIns.length > 0
