@@ -6,12 +6,13 @@ import type { CheckIn, ExerciseSession } from '@/lib/types';
 
 const CHAT_INSTRUCTIONS = `You are a rehabilitation monitoring assistant. Answer briefly using the patient's recorded check-ins and exercise sessions when relevant. You may summarize trends, explain the app's metrics, and suggest questions to discuss with a clinician. Do not diagnose conditions, prescribe medication, change treatment plans, or present medical advice as a definitive conclusion. If the user reports urgent symptoms such as severe pain, swelling, breathing problems, or a new emergency, tell them to contact their clinician or local emergency services promptly.`;
 
-function fallbackReply(message: string, checkIns: CheckIn[]) {
-  if (!checkIns.length) {
-    return 'There is no check-in history yet. Complete a daily check-in so the app can show recovery trends. For treatment decisions, please consult your clinician.';
+function cleanEnvironmentValue(value: string | undefined) {
+  const cleaned = value?.trim();
+  if (!cleaned) return '';
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    return cleaned.slice(1, -1).trim();
   }
-  const latest = checkIns[0];
-  return `Your latest check-in records pain ${latest.pain}/10, mobility ${latest.mobility}/10, and swelling as ${latest.swelling}. ${message ? 'Gemini is not configured, so this is a local summary rather than an AI response.' : ''} Please discuss any concerning symptoms with your clinician.`;
+  return cleaned;
 }
 
 export async function GET() {
@@ -54,20 +55,53 @@ export async function POST(request: NextRequest) {
   const checkIns = (checkInsResult.data ?? []) as CheckIn[];
   const sessions = (sessionsResult.data ?? []) as ExerciseSession[];
 
-  let reply = fallbackReply(message, checkIns);
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey) {
+  const apiKey = cleanEnvironmentValue(process.env.GEMINI_API_KEY);
+  if (!apiKey) {
+    return NextResponse.json(
+      {
+        error: 'Gemini is not configured on this deployment. Add GEMINI_API_KEY to the Vercel project that serves this URL, then redeploy.',
+        code: 'GEMINI_KEY_MISSING',
+      },
+      { status: 503 }
+    );
+  }
+
+  let reply = '';
+  const configuredModel = cleanEnvironmentValue(process.env.GEMINI_MODEL);
+  const modelCandidates = Array.from(new Set([
+    configuredModel,
+    'gemini-3.5-flash',
+    'gemini-3.8-flash',
+    'gemini-flash-latest',
+  ].filter(Boolean)));
+
+  const context = `Condition: ${patient.condition}\nCheck-ins: ${checkIns.map((c) => `${c.date}: pain ${c.pain}/10, mobility ${c.mobility}/10, fatigue ${c.fatigue}/10, sleep ${c.sleep_quality}/10, swelling ${c.swelling}, exercises ${c.exercises_completed ? 'yes' : 'no'}`).join('; ') || 'none'}\nSessions: ${sessions.map((s) => `${s.created_at}: ${s.reps} reps, form ${Math.round(s.form_score)}%, ROM ${Math.round(s.range_of_motion)}°`).join('; ') || 'none'}`;
+  const prompt = `${context}\n\nRecent conversation:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\nuser: ${message}\n\nRespond to the latest user message.`;
+  const genAI = new GoogleGenerativeAI(apiKey);
+
+  for (const modelName of modelCandidates) {
     try {
-      const context = `Condition: ${patient.condition}\nCheck-ins: ${checkIns.map((c) => `${c.date}: pain ${c.pain}/10, mobility ${c.mobility}/10, fatigue ${c.fatigue}/10, sleep ${c.sleep_quality}/10, swelling ${c.swelling}, exercises ${c.exercises_completed ? 'yes' : 'no'}`).join('; ') || 'none'}\nSessions: ${sessions.map((s) => `${s.created_at}: ${s.reps} reps, form ${Math.round(s.form_score)}%, ROM ${Math.round(s.range_of_motion)}°`).join('; ') || 'none'}`;
-      const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
-        model: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+      const model = genAI.getGenerativeModel({
+        model: modelName,
         systemInstruction: CHAT_INSTRUCTIONS,
       });
-      const result = await model.generateContent(`${context}\n\nRecent conversation:\n${history.map((item) => `${item.role}: ${item.content}`).join('\n')}\nuser: ${message}\n\nRespond to the latest user message.`);
-      reply = result.response.text().trim() || reply;
+      const result = await model.generateContent(prompt);
+      reply = result.response.text().trim();
+      if (reply) break;
     } catch (error) {
-      console.error('Gemini chat failed:', error);
+      const status = typeof error === 'object' && error && 'status' in error ? String(error.status) : 'unknown';
+      console.error('Gemini chat model failed', { model: modelName, status });
     }
+  }
+
+  if (!reply) {
+    return NextResponse.json(
+      {
+        error: 'Gemini could not answer. Check the API key restrictions, quota, and Vercel function logs.',
+        code: 'GEMINI_REQUEST_FAILED',
+      },
+      { status: 502 }
+    );
   }
 
   const now = new Date().toISOString();
