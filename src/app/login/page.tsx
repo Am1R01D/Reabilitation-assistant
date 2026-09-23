@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Activity, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import Link from 'next/link';
+import Image from 'next/image';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLanguage } from '@/components/LanguageProvider';
 
@@ -30,7 +31,7 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Login failed');
+        setError(text(data.error || 'Login failed', 'Не удалось войти. Проверьте почту и пароль.'));
         return;
       }
 
@@ -40,7 +41,7 @@ export default function LoginPage() {
         router.push('/patient/dashboard');
       }
     } catch {
-      setError('Connection error. Please try again.');
+      setError(text('Connection error. Please try again.', 'Ошибка соединения. Попробуйте ещё раз.'));
     } finally {
       setLoading(false);
     }
@@ -61,8 +62,8 @@ export default function LoginPage() {
       <div className="absolute w-80 h-80 -left-32 -bottom-32 rounded-full bg-medical-200/50 blur-3xl" />
       <div className="w-full max-w-md space-y-6 page-enter relative">
         <div className="text-center">
-          <div className="w-14 h-14 bg-medical-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_12px_25px_rgba(34,117,108,0.28)] float-gentle">
-            <Activity className="w-8 h-8 text-white" />
+          <div className="w-20 h-20 flex items-center justify-center mx-auto mb-4 float-gentle">
+            <Image src="/reassist-logo.png" alt="Re.assist" width={80} height={80} className="h-20 w-20 object-contain" priority />
           </div>
           <h1 className="text-2xl font-bold text-clinical-900">Re.assist</h1>
           <p className="text-clinical-500 mt-1">{text('Home Rehabilitation Platform', 'Платформа домашней реабилитации')}</p>

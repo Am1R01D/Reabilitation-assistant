@@ -34,7 +34,7 @@ function chooseSide(landmarks: Point[], right: number[], left: number[]) {
   return score(right) >= score(left) ? right : left;
 }
 
-export function useExerciseTracker(exerciseType: ExerciseType) {
+export function useExerciseTracker(exerciseType: ExerciseType, language: 'en' | 'ru' = 'en') {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const poseRef = useRef<PoseLandmarker | null>(null);
@@ -52,11 +52,13 @@ export function useExerciseTracker(exerciseType: ExerciseType) {
     reps: 0,
     jointAngle: 0,
     movementState: 'idle',
-    feedback: 'Initializing camera...',
+    feedback: language === 'ru' ? 'Инициализация камеры...' : 'Initializing camera...',
     isReady: false,
     isRunning: false,
     formScore: 100,
   });
+
+  const tr = useCallback((en: string, ru: string) => language === 'ru' ? ru : en, [language]);
 
   const processMovement = useCallback((value: number, low: number, high: number, labels: [string, string]) => {
     valuesRef.current.push(value);
@@ -65,7 +67,7 @@ export function useExerciseTracker(exerciseType: ExerciseType) {
     maxRef.current = Math.max(maxRef.current, value);
 
     let movementState: ExerciseTrackerState['movementState'] = 'moving';
-    let feedback = 'Continue the movement slowly';
+    let feedback = tr('Continue the movement slowly', 'Продолжайте движение медленно');
     if (value <= low) {
       phaseRef.current = 'contracted';
       movementState = 'contracted';
@@ -83,7 +85,7 @@ export function useExerciseTracker(exerciseType: ExerciseType) {
     const targetRange = Math.max(1, high - low);
     const formScore = Math.min(100, Math.round((observedRange / targetRange) * 100));
     setState((current) => ({ ...current, reps: repsRef.current, jointAngle: Math.round(value), movementState, feedback, formScore }));
-  }, []);
+  }, [tr]);
 
   const processFrame = useCallback(() => {
     const video = videoRef.current;
@@ -113,9 +115,9 @@ export function useExerciseTracker(exerciseType: ExerciseType) {
           const baseDistance = Math.max(0.001, distance(hand[bases[index]], hand[0]));
           return sum + distance(hand[tip], hand[0]) / baseDistance;
         }, 0) / tips.length;
-        processMovement(openness * 100, 120, 165, ['Hand closed — now open', 'Hand open — now close']);
+        processMovement(openness * 100, 120, 165, [tr('Hand closed — now open', 'Кисть сжата — теперь разожмите'), tr('Hand open — now close', 'Кисть раскрыта — теперь сожмите')]);
       } else {
-        setState((current) => ({ ...current, feedback: 'Show one hand clearly to the camera' }));
+        setState((current) => ({ ...current, feedback: tr('Show one hand clearly to the camera', 'Покажите одну кисть камере целиком') }));
       }
     } else if (poseRef.current) {
       const result = poseRef.current.detectForVideo(video, performance.now());
@@ -126,24 +128,24 @@ export function useExerciseTracker(exerciseType: ExerciseType) {
 
         if (exerciseType === 'bicep_curl') {
           const [shoulder, elbow, wrist] = chooseSide(landmarks, [12, 14, 16], [11, 13, 15]).map((index) => landmarks[index]);
-          processMovement(angle(shoulder, elbow, wrist), 70, 150, ['Arm bent — now straighten', 'Arm straight — now bend']);
+          processMovement(angle(shoulder, elbow, wrist), 70, 150, [tr('Arm bent — now straighten', 'Рука согнута — теперь выпрямите'), tr('Arm straight — now bend', 'Рука выпрямлена — теперь согните')]);
         } else if (exerciseType === 'straight_leg_raise') {
           const [shoulder, hip, knee, ankle] = chooseSide(landmarks, [12, 24, 26, 28], [11, 23, 25, 27]).map((index) => landmarks[index]);
           const hipAngle = angle(shoulder, hip, ankle);
           const kneeAngle = angle(hip, knee, ankle);
-          processMovement(hipAngle, 125, 165, ['Leg raised — lower slowly', 'Leg lowered — raise it straight']);
-          if (kneeAngle < 150) setState((current) => ({ ...current, feedback: 'Keep your knee straight', formScore: Math.min(current.formScore, 65) }));
+          processMovement(hipAngle, 125, 165, [tr('Leg raised — lower slowly', 'Нога поднята — медленно опустите'), tr('Leg lowered — raise it straight', 'Нога опущена — поднимите её прямой')]);
+          if (kneeAngle < 150) setState((current) => ({ ...current, feedback: tr('Keep your knee straight', 'Не сгибайте ногу в колене'), formScore: Math.min(current.formScore, 65) }));
         } else {
           const [knee, ankle, foot] = chooseSide(landmarks, [26, 28, 32], [25, 27, 31]).map((index) => landmarks[index]);
-          processMovement(angle(knee, ankle, foot), 100, 125, ['Foot flexed — point away', 'Foot pointed — pull it back']);
+          processMovement(angle(knee, ankle, foot), 100, 125, [tr('Foot flexed — point away', 'Стопа согнута — потяните носок от себя'), tr('Foot pointed — pull it back', 'Носок вытянут — потяните стопу к себе')]);
         }
       } else {
-        setState((current) => ({ ...current, feedback: 'Move back so the required joints are visible' }));
+        setState((current) => ({ ...current, feedback: tr('Move back so the required joints are visible', 'Отойдите назад, чтобы нужные суставы были видны') }));
       }
     }
 
     animationRef.current = requestAnimationFrame(processFrame);
-  }, [exerciseType, processMovement]);
+  }, [exerciseType, processMovement, tr]);
 
   const initialize = useCallback(async () => {
     try {
@@ -161,12 +163,12 @@ export function useExerciseTracker(exerciseType: ExerciseType) {
           numPoses: 1,
         });
       }
-      setState((current) => ({ ...current, isReady: true, feedback: 'Camera ready — press Start' }));
+      setState((current) => ({ ...current, isReady: true, feedback: tr('Camera ready — press Start', 'Камера готова — нажмите «Начать»') }));
       animationRef.current = requestAnimationFrame(processFrame);
     } catch {
-      setState((current) => ({ ...current, feedback: 'Failed to initialize MediaPipe' }));
+      setState((current) => ({ ...current, feedback: tr('Failed to initialize MediaPipe', 'Не удалось запустить MediaPipe') }));
     }
-  }, [exerciseType, processFrame]);
+  }, [exerciseType, processFrame, tr]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -179,7 +181,7 @@ export function useExerciseTracker(exerciseType: ExerciseType) {
         await video.play();
         await initialize();
       })
-      .catch(() => setState((current) => ({ ...current, feedback: 'Camera access denied. Please allow camera permissions.' })));
+      .catch(() => setState((current) => ({ ...current, feedback: tr('Camera access denied. Please allow camera permissions.', 'Нет доступа к камере. Разрешите доступ в настройках браузера.') })));
 
     return () => {
       cancelAnimationFrame(animationRef.current);
@@ -187,7 +189,7 @@ export function useExerciseTracker(exerciseType: ExerciseType) {
       poseRef.current?.close();
       handRef.current?.close();
     };
-  }, [initialize]);
+  }, [initialize, tr]);
 
   const startSession = useCallback(() => {
     repsRef.current = 0;
@@ -197,8 +199,8 @@ export function useExerciseTracker(exerciseType: ExerciseType) {
     phaseRef.current = 'extended';
     startTimeRef.current = Date.now();
     runningRef.current = true;
-    setState((current) => ({ ...current, reps: 0, formScore: 0, isRunning: true, feedback: 'Session started' }));
-  }, []);
+    setState((current) => ({ ...current, reps: 0, formScore: 0, isRunning: true, feedback: tr('Session started', 'Тренировка началась') }));
+  }, [tr]);
 
   const stopSession = useCallback(() => {
     runningRef.current = false;

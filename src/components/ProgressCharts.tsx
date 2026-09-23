@@ -67,10 +67,10 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#94a3b8" />
               <YAxis domain={[0, 10]} tick={{ fontSize: 12 }} stroke="#94a3b8" />
               <Tooltip />
-              <Line type="monotone" dataKey="pain" stroke="#ef4444" strokeWidth={2} name="Pain" dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="mobility" stroke="#2d9186" strokeWidth={2} name="Mobility" dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="fatigue" stroke="#f59e0b" strokeWidth={2} name="Fatigue" dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="sleep" stroke="#6366f1" strokeWidth={2} name="Sleep quality" dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="pain" stroke="#ef4444" strokeWidth={2} name={text('Pain', 'Боль')} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="mobility" stroke="#2d9186" strokeWidth={2} name={text('Mobility', 'Подвижность')} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="fatigue" stroke="#f59e0b" strokeWidth={2} name={text('Fatigue', 'Усталость')} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="sleep" stroke="#6366f1" strokeWidth={2} name={text('Sleep quality', 'Качество сна')} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         ) : (
@@ -85,13 +85,13 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
             <BarChart data={complianceData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#94a3b8" />
-              <YAxis domain={[0, 1]} ticks={[0, 1]} tickFormatter={(v) => (v ? 'Yes' : 'No')} stroke="#94a3b8" />
-              <Tooltip formatter={(v: number) => (v ? 'Completed' : 'Missed')} />
+              <YAxis domain={[0, 1]} ticks={[0, 1]} tickFormatter={(v) => (v ? text('Yes', 'Да') : text('No', 'Нет'))} stroke="#94a3b8" />
+              <Tooltip formatter={(v: number) => (v ? text('Completed', 'Выполнено') : text('Missed', 'Пропущено'))} />
               <Bar dataKey="completed" fill="#2d9186" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-clinical-500 text-sm py-8 text-center">No compliance data yet</p>
+          <p className="text-clinical-500 text-sm py-8 text-center">{text('No compliance data yet', 'Данных о выполнении пока нет')}</p>
         )}
       </div>
 
@@ -104,13 +104,13 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#94a3b8" />
               <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
               <Tooltip />
-              <Line type="monotone" dataKey="rom" stroke="#6366f1" strokeWidth={2} name="Range of Motion" dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="form" stroke="#2d9186" strokeWidth={2} name="Form Score" dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="reps" stroke="#f59e0b" strokeWidth={2} name="Reps" dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="rom" stroke="#6366f1" strokeWidth={2} name={text('Range of Motion', 'Диапазон движения')} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="form" stroke="#2d9186" strokeWidth={2} name={text('Form Score', 'Техника')} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="reps" stroke="#f59e0b" strokeWidth={2} name={text('Reps', 'Повторения')} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-clinical-500 text-sm py-8 text-center">No exercise sessions yet</p>
+          <p className="text-clinical-500 text-sm py-8 text-center">{text('No exercise sessions yet', 'Тренировок пока нет')}</p>
         )}
       </div>
     </div>

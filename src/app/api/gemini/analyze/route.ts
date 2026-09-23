@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
 
   let patientId: number;
   let condition: string;
+  const body = await request.json().catch(() => ({})) as { patientId?: number; language?: 'en' | 'ru' };
+  const language = body.language === 'ru' ? 'ru' : 'en';
 
   if (session.role === 'patient') {
     const patient = await getPatientByUserId(session.userId);
@@ -19,11 +21,11 @@ export async function POST(request: NextRequest) {
     patientId = patient.id;
     condition = patient.condition;
   } else {
-    const body = await request.json();
-    patientId = body.patientId;
-    if (!patientId) {
+    const requestedPatientId = body.patientId;
+    if (!requestedPatientId) {
       return NextResponse.json({ error: 'Patient ID required' }, { status: 400 });
     }
+    patientId = requestedPatientId;
     const db = getDb();
     const patient = db.prepare('SELECT * FROM patients WHERE id = ? AND doctor_id = ?').get(
       patientId,
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
     )
     .all(patientId) as unknown as ExerciseSession[];
 
-  const analysis = await analyzeRecovery(checkIns, sessions, condition);
+  const analysis = await analyzeRecovery(checkIns, sessions, condition, language);
 
   db.prepare(
     `INSERT INTO gemini_analyses (patient_id, summary, positive_trends, concerning_changes, adherence_summary, clinician_points)

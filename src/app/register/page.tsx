@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Activity, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLanguage } from '@/components/LanguageProvider';
 
@@ -13,6 +14,7 @@ export default function RegisterPage() {
   const [injuryType, setInjuryType] = useState<'broken_arm' | 'broken_leg'>('broken_arm');
   const [castStatus, setCastStatus] = useState<'cast_on' | 'cast_removed'>('cast_on');
   const [message, setMessage] = useState('');
+  const [messageSuccess, setMessageSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const { text } = useLanguage();
 
@@ -20,13 +22,14 @@ export default function RegisterPage() {
     e.preventDefault(); setLoading(true); setMessage('');
     const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password, injuryType, castStatus }) });
     const data = await res.json(); setLoading(false);
-    setMessage(res.ok ? 'Account created. You can sign in now.' : data.error || 'Registration failed');
+    setMessageSuccess(res.ok);
+    setMessage(res.ok ? text('Account created. You can sign in now.', 'Аккаунт создан. Теперь можно войти.') : text(data.error || 'Registration failed', 'Не удалось зарегистрироваться. Проверьте данные.'));
   }
 
   return <div className="min-h-screen bg-gradient-to-br from-medical-50 via-white to-clinical-100 flex items-center justify-center p-4 relative">
     <div className="absolute right-4 top-4"><LanguageSwitcher /></div>
     <div className="w-full max-w-md space-y-5 page-enter">
-      <div className="text-center"><div className="w-12 h-12 bg-medical-600 rounded-2xl flex items-center justify-center mx-auto mb-3"><Activity className="w-6 h-6 text-white" /></div><h1 className="text-2xl font-bold">{text('Create your Re.assist account', 'Создайте аккаунт Re.assist')}</h1><p className="text-clinical-500 text-sm mt-1">{text('Start tracking your recovery', 'Начните отслеживать восстановление')}</p></div>
+      <div className="text-center"><div className="w-16 h-16 flex items-center justify-center mx-auto mb-3"><Image src="/reassist-logo.png" alt="Re.assist" width={64} height={64} className="h-16 w-16 object-contain" priority /></div><h1 className="text-2xl font-bold">{text('Create your Re.assist account', 'Создайте аккаунт Re.assist')}</h1><p className="text-clinical-500 text-sm mt-1">{text('Start tracking your recovery', 'Начните отслеживать восстановление')}</p></div>
       <form onSubmit={submit} className="card p-6 space-y-4">
         <input className="input-field" placeholder={text('Full name', 'Имя и фамилия')} value={name} onChange={(e) => setName(e.target.value)} required />
         <input className="input-field" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -46,7 +49,7 @@ export default function RegisterPage() {
           </select>
         </div>
         <p className="text-xs text-medical-800 bg-medical-50 rounded-xl px-3 py-2">{text('Your clinic will assign a clinician after registration.', 'После регистрации клиника назначит врача.')}</p>
-        {message && <p className={`text-sm rounded-xl px-3 py-2 ${message.startsWith('Account') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{message}</p>}
+        {message && <p className={`text-sm rounded-xl px-3 py-2 ${messageSuccess ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{message}</p>}
         <button className="btn-primary w-full flex justify-center gap-2" disabled={loading}>{loading && <Loader2 className="w-4 h-4 animate-spin" />}{text('Create account', 'Создать аккаунт')}</button>
       </form>
       <p className="text-center text-sm text-clinical-500">{text('Already have an account?', 'Уже есть аккаунт?')} <Link className="text-medical-700 font-medium" href="/login">{text('Sign in', 'Войти')}</Link></p>

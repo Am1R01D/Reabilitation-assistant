@@ -33,7 +33,8 @@ Respond ONLY with valid JSON in this exact format:
 function buildPatientDataPrompt(
   checkIns: CheckIn[],
   sessions: ExerciseSession[],
-  condition: string
+  condition: string,
+  language: 'en' | 'ru'
 ): string {
   const checkInSummary = checkIns
     .slice(0, 14)
@@ -59,18 +60,19 @@ ${checkInSummary || 'No check-ins yet'}
 Recent exercise sessions (most recent first):
 ${sessionSummary || 'No exercise sessions yet'}
 
-Analyze this structured recovery data and return JSON only.`;
+Analyze this structured recovery data and return JSON only. Write every human-readable JSON value in ${language === 'ru' ? 'Russian' : 'English'}.`;
 }
 
 export async function analyzeRecovery(
   checkIns: CheckIn[],
   sessions: ExerciseSession[],
-  condition: string
+  condition: string,
+  language: 'en' | 'ru' = 'en'
 ): Promise<GeminiRecoveryAnalysis> {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    return generateFallbackAnalysis(checkIns, sessions);
+    return generateFallbackAnalysis(checkIns, sessions, language);
   }
 
   try {
@@ -80,14 +82,14 @@ export async function analyzeRecovery(
       systemInstruction: SYSTEM_PROMPT,
     });
 
-    const result = await model.generateContent(buildPatientDataPrompt(checkIns, sessions, condition));
+    const result = await model.generateContent(buildPatientDataPrompt(checkIns, sessions, condition, language));
     const text = result.response.text();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON in response');
 
     const parsed = JSON.parse(jsonMatch[0]);
     return {
-      summary: parsed.summary || 'Analysis unavailable.',
+      summary: parsed.summary || (language === 'ru' ? 'Анализ недоступен.' : 'Analysis unavailable.'),
       positiveTrends: parsed.positiveTrends || [],
       concerningChanges: parsed.concerningChanges || [],
       adherenceSummary: parsed.adherenceSummary || '',
@@ -95,13 +97,14 @@ export async function analyzeRecovery(
     };
   } catch (error) {
     console.error('Gemini analysis failed:', error);
-    return generateFallbackAnalysis(checkIns, sessions);
+    return generateFallbackAnalysis(checkIns, sessions, language);
   }
 }
 
 function generateFallbackAnalysis(
   checkIns: CheckIn[],
-  sessions: ExerciseSession[]
+  sessions: ExerciseSession[],
+  language: 'en' | 'ru'
 ): GeminiRecoveryAnalysis {
   const positiveTrends: string[] = [];
   const concerningChanges: string[] = [];
@@ -111,17 +114,17 @@ function generateFallbackAnalysis(
     const latest = checkIns[0];
     const previous = checkIns[1];
     if (latest.pain < previous.pain) {
-      positiveTrends.push(`Pain decreased from ${previous.pain} to ${latest.pain}.`);
+      positiveTrends.push(language === 'ru' ? `Боль снизилась с ${previous.pain} до ${latest.pain}.` : `Pain decreased from ${previous.pain} to ${latest.pain}.`);
     } else if (latest.pain > previous.pain) {
-      concerningChanges.push(`Pain increased from ${previous.pain} to ${latest.pain}.`);
-      clinicianReviewPoints.push('Review recent pain trend with patient.');
+      concerningChanges.push(language === 'ru' ? `Боль усилилась с ${previous.pain} до ${latest.pain}.` : `Pain increased from ${previous.pain} to ${latest.pain}.`);
+      clinicianReviewPoints.push(language === 'ru' ? 'Обсудить с пациентом динамику боли.' : 'Review recent pain trend with patient.');
     }
     if (latest.mobility > previous.mobility) {
-      positiveTrends.push(`Mobility improved from ${previous.mobility} to ${latest.mobility}.`);
+      positiveTrends.push(language === 'ru' ? `Подвижность улучшилась с ${previous.mobility} до ${latest.mobility}.` : `Mobility improved from ${previous.mobility} to ${latest.mobility}.`);
     }
     if (latest.swelling === 'severe') {
-      concerningChanges.push('Patient reported severe swelling.');
-      clinicianReviewPoints.push('Assess swelling severity at next visit.');
+      concerningChanges.push(language === 'ru' ? 'Пациент сообщил о сильном отёке.' : 'Patient reported severe swelling.');
+      clinicianReviewPoints.push(language === 'ru' ? 'Оценить выраженность отёка на следующем приёме.' : 'Assess swelling severity at next visit.');
     }
   }
 
@@ -130,17 +133,17 @@ function generateFallbackAnalysis(
 
   if (sessions.length > 0) {
     const avgForm = sessions.reduce((s, x) => s + x.form_score, 0) / sessions.length;
-    positiveTrends.push(`Average exercise form score: ${avgForm.toFixed(0)}%.`);
+    positiveTrends.push(language === 'ru' ? `Средняя оценка техники упражнений: ${avgForm.toFixed(0)}%.` : `Average exercise form score: ${avgForm.toFixed(0)}%.`);
   }
 
   return {
     summary:
       checkIns.length > 0
-        ? 'Local analysis based on available check-in and exercise data. Configure GEMINI_API_KEY for AI-powered insights.'
-        : 'Insufficient data for analysis. Complete check-ins and exercises to generate insights.',
+        ? (language === 'ru' ? 'Локальный анализ по доступным чек-инам и тренировкам. Настройте GEMINI_API_KEY для анализа с помощью AI.' : 'Local analysis based on available check-in and exercise data. Configure GEMINI_API_KEY for AI-powered insights.')
+        : (language === 'ru' ? 'Недостаточно данных для анализа. Заполняйте чек-ины и выполняйте упражнения.' : 'Insufficient data for analysis. Complete check-ins and exercises to generate insights.'),
     positiveTrends,
     concerningChanges,
-    adherenceSummary: `${Math.round(adherenceRate)}% exercise compliance over recorded check-ins.`,
+    adherenceSummary: language === 'ru' ? `Упражнения выполнены в ${Math.round(adherenceRate)}% сохранённых чек-инов.` : `${Math.round(adherenceRate)}% exercise compliance over recorded check-ins.`,
     clinicianReviewPoints,
   };
 }

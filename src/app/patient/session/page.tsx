@@ -12,14 +12,9 @@ export default function ExerciseSessionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const exercise = getExerciseDefinition(searchParams.get('exercise'));
-  const { text } = useLanguage();
-  const exerciseName = ({
-    finger_flexion: text('Finger Flexion', 'Сгибание пальцев'),
-    bicep_curl: text('Bicep Curl', 'Сгибание руки'),
-    ankle_pumps: text('Ankle Movements', 'Движения стопой'),
-    straight_leg_raise: text('Straight Leg Raise', 'Подъём прямой ноги'),
-  } as const)[exercise.id];
-  const { videoRef, canvasRef, state, startSession, stopSession } = useExerciseTracker(exercise.id);
+  const { text, language } = useLanguage();
+  const exerciseName = language === 'ru' ? exercise.nameRu : exercise.name;
+  const { videoRef, canvasRef, state, startSession, stopSession } = useExerciseTracker(exercise.id, language);
   const [saving, setSaving] = useState(false);
   const [results, setResults] = useState<{
     reps: number;
@@ -57,10 +52,10 @@ export default function ExerciseSessionPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <ResultCard label="Repetitions" value={String(results.reps)} />
-          <ResultCard label="Form Score" value={`${results.formScore}%`} />
-          <ResultCard label="Range of Motion" value={`${results.rangeOfMotion}°`} />
-          <ResultCard label="Duration" value={`${results.exerciseDuration}s`} />
+          <ResultCard label={text('Repetitions', 'Повторения')} value={String(results.reps)} />
+          <ResultCard label={text('Form Score', 'Техника')} value={`${results.formScore}%`} />
+          <ResultCard label={text('Range of Motion', 'Диапазон движения')} value={`${results.rangeOfMotion}°`} />
+          <ResultCard label={text('Duration', 'Длительность')} value={`${results.exerciseDuration}${text('s', 'с')}`} />
         </div>
 
         <div className="flex gap-3">
@@ -71,7 +66,7 @@ export default function ExerciseSessionPage() {
             }}
             className="btn-secondary flex-1 flex items-center justify-center gap-2"
           >
-            <RotateCcw className="w-4 h-4" /> Again
+            <RotateCcw className="w-4 h-4" /> {text('Again', 'Ещё раз')}
           </button>
           <button onClick={() => router.push('/patient/dashboard')} className="btn-primary flex-1">
             {text('Dashboard', 'Главная')}
@@ -85,7 +80,7 @@ export default function ExerciseSessionPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold text-clinical-900">{exerciseName}</h1>
-        <p className="text-clinical-500 mt-1">{exercise.cameraInstruction}</p>
+        <p className="text-clinical-500 mt-1">{language === 'ru' ? exercise.cameraInstructionRu : exercise.cameraInstruction}</p>
       </div>
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -93,6 +88,15 @@ export default function ExerciseSessionPage() {
       </div>
 
       <SafetyBanner />
+
+      <div className="card p-4">
+        <h2 className="text-sm font-semibold text-clinical-900">{text('Quick tutorial', 'Краткая инструкция')}</h2>
+        <ol className="mt-2 grid gap-2 text-sm text-clinical-600 md:grid-cols-3">
+          {(language === 'ru' ? exercise.tutorialRu : exercise.tutorial).map((tutorialStep, index) => (
+            <li key={tutorialStep} className="flex gap-2 rounded-lg bg-clinical-50 p-2"><span className="font-bold text-medical-600">{index + 1}</span><span>{tutorialStep}</span></li>
+          ))}
+        </ol>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 relative">
@@ -103,7 +107,7 @@ export default function ExerciseSessionPage() {
               <div className="absolute inset-0 flex items-center justify-center bg-clinical-900/80">
                 <div className="text-center text-white">
                   <Camera className="w-10 h-10 mx-auto mb-2 animate-pulse" />
-                  <p className="text-sm">Starting camera...</p>
+                  <p className="text-sm">{text('Starting camera...', 'Запуск камеры...')}</p>
                 </div>
               </div>
             )}
@@ -119,7 +123,7 @@ export default function ExerciseSessionPage() {
           <div className="card p-5">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <p className="text-xs text-clinical-500">{exercise.angleLabel}</p>
+                <p className="text-xs text-clinical-500">{language === 'ru' ? exercise.angleLabelRu : exercise.angleLabel}</p>
                 <p className="text-2xl font-bold text-clinical-900">{state.jointAngle}°</p>
               </div>
               <div>
@@ -138,7 +142,7 @@ export default function ExerciseSessionPage() {
                       : 'bg-clinical-100 text-clinical-600'
                 }`}
               >
-                {state.movementState}
+                {language === 'ru' ? ({ idle: 'ожидание', extended: 'разогнуто', contracted: 'согнуто', moving: 'движение' }[state.movementState]) : state.movementState}
               </span>
             </div>
           </div>

@@ -53,7 +53,7 @@ export default function CheckInPage() {
       setAlreadyDone(true);
       setShowWarning(data.warning);
     } else {
-      alert(data.error || 'Check-in failed');
+      alert(text(data.error || 'Check-in failed', 'Не удалось сохранить чек-ин'));
     }
   }
 
@@ -122,7 +122,7 @@ export default function CheckInPage() {
                     : 'border-clinical-200 text-clinical-600 hover:bg-clinical-50'
                 }`}
               >
-                {level}
+                {text(level, level === 'none' ? 'Нет' : level === 'mild' ? 'Лёгкий' : 'Сильный')}
               </button>
             ))}
           </div>

@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Activity, LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useLanguage } from './LanguageProvider';
@@ -42,8 +43,8 @@ export function Navbar({ items, userName, role }: NavbarProps) {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href={items[0]?.href || '/'} className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-medical-600 rounded-xl flex items-center justify-center shadow-[0_5px_12px_rgba(34,117,108,0.25)]">
-              <Activity className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center">
+              <Image src="/reassist-logo.png" alt="Re.assist" width={40} height={40} className="h-10 w-10 object-contain" priority />
             </div>
             <span className="font-semibold text-clinical-900 hidden sm:block">Re.assist</span>
           </Link>
@@ -69,7 +70,7 @@ export function Navbar({ items, userName, role }: NavbarProps) {
             <LanguageSwitcher compact />
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-clinical-900">{userName}</p>
-              <p className="text-xs text-clinical-500 capitalize">{role}</p>
+              <p className="text-xs text-clinical-500 capitalize">{role === 'doctor' ? text('Doctor', 'Врач') : text('Patient', 'Пациент')}</p>
             </div>
             <button
               onClick={handleLogout}

@@ -44,7 +44,7 @@ export default function PatientDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { text } = useLanguage();
+  const { text, language } = useLanguage();
 
   useEffect(() => {
     async function load() {
@@ -60,24 +60,24 @@ export default function PatientDashboard() {
         }
         setData({ ...progress, todayCheckIn: checkIn.todayCheckIn });
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'Unable to load dashboard data.');
+        setError(language === 'ru' ? 'Не удалось загрузить данные главной страницы.' : (loadError instanceof Error ? loadError.message : 'Unable to load dashboard data.'));
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, []);
+  }, [language]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="animate-pulse text-clinical-500">Loading dashboard...</div>
+        <div className="animate-pulse text-clinical-500">{text('Loading dashboard...', 'Загрузка главной страницы...')}</div>
       </div>
     );
   }
 
   if (error || !data) {
-    return <DataError message={error || 'Dashboard data is unavailable.'} />;
+    return <DataError message={error || text('Dashboard data is unavailable.', 'Данные главной страницы недоступны.')} />;
   }
 
   const latestCheckIn = data.checkIns[data.checkIns.length - 1];
@@ -94,7 +94,7 @@ export default function PatientDashboard() {
         <div className="relative">
           <p className="text-medical-200 text-sm font-medium mb-2">{text('YOUR RECOVERY SPACE', 'ВАШЕ ВОССТАНОВЛЕНИЕ')}</p>
           <h1 className="text-3xl font-bold tracking-tight">{text('Welcome back', 'С возвращением')}</h1>
-          <p className="text-medical-100 mt-2">{data.condition}</p>
+          <p className="text-medical-100 mt-2">{language === 'ru' ? data.condition.replace('Broken arm', 'Перелом руки').replace('Broken leg', 'Перелом ноги').replace('cast still on', 'гипс ещё не снят').replace('cast removed', 'гипс снят') : data.condition}</p>
         </div>
       </div>
 
@@ -118,27 +118,27 @@ export default function PatientDashboard() {
         <StatCard
           title={text('Pain Level', 'Уровень боли')}
           value={latestCheckIn ? `${latestCheckIn.pain}/10` : '0/10'}
-          subtitle={latestCheckIn ? 'Latest check-in' : 'No check-ins yet'}
+          subtitle={latestCheckIn ? text('Latest check-in', 'Последний чек-ин') : text('No check-ins yet', 'Чек-инов пока нет')}
           icon={Heart}
           trend={latestCheckIn && latestCheckIn.pain <= 4 ? 'up' : 'down'}
         />
         <StatCard
           title={text('Mobility', 'Подвижность')}
           value={latestCheckIn ? `${latestCheckIn.mobility}/10` : '0/10'}
-          subtitle={latestCheckIn ? 'Latest check-in' : 'No check-ins yet'}
+          subtitle={latestCheckIn ? text('Latest check-in', 'Последний чек-ин') : text('No check-ins yet', 'Чек-инов пока нет')}
           icon={TrendingUp}
           trend={latestCheckIn && latestCheckIn.mobility >= 6 ? 'up' : 'neutral'}
         />
         <StatCard
           title={text('Recovery Streak', 'Серия восстановления')}
-          value={`${data.gamification.recovery_streak} days`}
-          subtitle={`Exercise streak: ${data.gamification.exercise_streak} days`}
+          value={`${data.gamification.recovery_streak} ${text('days', 'дн.')}`}
+          subtitle={`${text('Exercise streak', 'Серия упражнений')}: ${data.gamification.exercise_streak} ${text('days', 'дн.')}`}
           icon={Flame}
         />
         <StatCard
           title={text('Weekly Goal', 'Недельная цель')}
           value={`${weeklyPct}%`}
-          subtitle={`${data.gamification.weekly_completed}/${data.gamification.weekly_goal} sessions`}
+          subtitle={`${data.gamification.weekly_completed}/${data.gamification.weekly_goal} ${text('sessions', 'тренировок')}`}
           icon={Target}
         />
       </div>
@@ -172,8 +172,8 @@ export default function PatientDashboard() {
                   <p className="font-medium text-sm">{text('Rehabilitation Exercises', 'Реабилитационные упражнения')}</p>
                   <p className="text-xs text-clinical-500">
                     {latestSession
-                      ? `Last: ${latestSession.reps} reps, ${Math.round(latestSession.form_score)}% form`
-                      : 'Not started today'}
+                      ? text(`Last: ${latestSession.reps} reps, ${Math.round(latestSession.form_score)}% form`, `Последняя: ${latestSession.reps} повт., техника ${Math.round(latestSession.form_score)}%`)
+                      : text('Not started today', 'Сегодня ещё не выполнялись')}
                   </p>
                 </div>
               </div>
@@ -190,12 +190,12 @@ export default function PatientDashboard() {
       {latestCheckIn && (
         <div className="card p-5">
           <h3 className="font-semibold text-clinical-900">{text('Latest Daily Check-in', 'Последний ежедневный чек-ин')}</h3>
-          <p className="text-xs text-clinical-500 mt-1">Recorded {latestCheckIn.date}</p>
+          <p className="text-xs text-clinical-500 mt-1">{text('Recorded', 'Записано')}: {latestCheckIn.date}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
-            <CheckInDetail label="Swelling" value={latestCheckIn.swelling} />
-            <CheckInDetail label="Fatigue" value={`${latestCheckIn.fatigue}/10`} />
-            <CheckInDetail label="Sleep quality" value={`${latestCheckIn.sleep_quality}/10`} />
-            <CheckInDetail label="Exercises" value={latestCheckIn.exercises_completed ? 'Completed' : 'Not completed'} />
+            <CheckInDetail label={text('Swelling', 'Отёк')} value={text(latestCheckIn.swelling, latestCheckIn.swelling === 'none' ? 'нет' : latestCheckIn.swelling === 'mild' ? 'лёгкий' : 'сильный')} />
+            <CheckInDetail label={text('Fatigue', 'Усталость')} value={`${latestCheckIn.fatigue}/10`} />
+            <CheckInDetail label={text('Sleep quality', 'Качество сна')} value={`${latestCheckIn.sleep_quality}/10`} />
+            <CheckInDetail label={text('Exercises', 'Упражнения')} value={latestCheckIn.exercises_completed ? text('Completed', 'Выполнены') : text('Not completed', 'Не выполнены')} />
           </div>
         </div>
       )}
@@ -221,11 +221,12 @@ function CheckInDetail({ label, value }: { label: string; value: string }) {
 }
 
 function DataError({ message }: { message: string }) {
+  const { text } = useLanguage();
   return (
     <div className="card max-w-xl mx-auto p-6 text-center">
-      <h1 className="text-lg font-semibold text-clinical-900">Dashboard could not be loaded</h1>
+      <h1 className="text-lg font-semibold text-clinical-900">{text('Dashboard could not be loaded', 'Не удалось загрузить главную страницу')}</h1>
       <p className="mt-2 text-sm text-clinical-600">{message}</p>
-      <button onClick={() => window.location.reload()} className="btn-primary mt-4">Try again</button>
+      <button onClick={() => window.location.reload()} className="btn-primary mt-4">{text('Try again', 'Повторить')}</button>
     </div>
   );
 }

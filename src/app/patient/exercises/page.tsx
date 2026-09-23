@@ -10,7 +10,7 @@ import { useLanguage } from '@/components/LanguageProvider';
 export default function ExercisesPage() {
   const [condition, setCondition] = useState('');
   const [loading, setLoading] = useState(true);
-  const { text } = useLanguage();
+  const { text, language } = useLanguage();
 
   useEffect(() => {
     fetch('/api/auth/me', { cache: 'no-store' })
@@ -52,12 +52,20 @@ export default function ExercisesPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-clinical-900">{localizeExercise(exercise.id, text).name}</h3>
+                    <h3 className="font-semibold text-clinical-900">{language === 'ru' ? exercise.nameRu : exercise.name}</h3>
                     {!available && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{text('Unlocks after cast removal', 'Откроется после снятия гипса')}</span>}
                   </div>
-                  <p className="text-sm text-clinical-600 mb-3">{localizeExercise(exercise.id, text).description}</p>
+                  <p className="text-sm text-clinical-600 mb-3">{language === 'ru' ? exercise.descriptionRu : exercise.description}</p>
+                  <div className="mb-4 rounded-xl bg-clinical-50 p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-clinical-600">{text('How to do it', 'Как выполнять')}</p>
+                    <ol className="space-y-1.5 text-sm text-clinical-700">
+                      {(language === 'ru' ? exercise.tutorialRu : exercise.tutorial).map((step, index) => (
+                        <li key={step} className="flex gap-2"><span className="font-semibold text-medical-600">{index + 1}.</span><span>{step}</span></li>
+                      ))}
+                    </ol>
+                  </div>
                   <div className="flex flex-wrap gap-3 text-xs text-clinical-500">
-                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {exercise.duration}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {language === 'ru' ? exercise.durationRu : exercise.duration}</span>
                     <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5" /> {exercise.targetReps} {text('reps', 'повторений')}</span>
                     <span className="flex items-center gap-1"><Camera className="w-3.5 h-3.5" /> {text('MediaPipe tracking', 'Отслеживание MediaPipe')}</span>
                   </div>
@@ -74,14 +82,4 @@ export default function ExercisesPage() {
       </div>
     </div>
   );
-}
-
-function localizeExercise(id: string, text: (english: string, russian: string) => string) {
-  const translations: Record<string, { name: string; description: string }> = {
-    finger_flexion: { name: text('Finger Flexion', 'Сгибание пальцев'), description: text('Slowly open and close your hand while MediaPipe counts each movement.', 'Медленно открывайте и закрывайте ладонь, а MediaPipe посчитает движения.') },
-    bicep_curl: { name: text('Bicep Curl', 'Сгибание руки'), description: text('Bend and straighten the arm while MediaPipe tracks the elbow.', 'Сгибайте и разгибайте руку, пока MediaPipe отслеживает локоть.') },
-    ankle_pumps: { name: text('Ankle Movements', 'Движения стопой'), description: text('Move the foot gently up and down while MediaPipe follows the ankle.', 'Плавно двигайте стопой вверх и вниз, пока MediaPipe отслеживает голеностоп.') },
-    straight_leg_raise: { name: text('Straight Leg Raise', 'Подъём прямой ноги'), description: text('Raise a straight leg while lying down.', 'Поднимайте прямую ногу в положении лёжа.') },
-  };
-  return translations[id] || { name: id, description: '' };
 }

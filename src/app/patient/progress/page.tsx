@@ -25,7 +25,7 @@ export default function ProgressPage() {
     complianceRate: number;
   } | null>(null);
   const [error, setError] = useState('');
-  const { text } = useLanguage();
+  const { text, language } = useLanguage();
 
   useEffect(() => {
     fetch('/api/progress', { cache: 'no-store' })
@@ -35,19 +35,19 @@ export default function ProgressPage() {
         return body;
       })
       .then(setData)
-      .catch((loadError) => setError(loadError instanceof Error ? loadError.message : 'Unable to load progress data.'));
-  }, []);
+      .catch((loadError) => setError(language === 'ru' ? 'Не удалось загрузить данные прогресса.' : (loadError instanceof Error ? loadError.message : 'Unable to load progress data.')));
+  }, [language]);
 
   if (!data && !error) {
-    return <div className="text-center py-20 text-clinical-500 animate-pulse">Loading progress...</div>;
+    return <div className="text-center py-20 text-clinical-500 animate-pulse">{text('Loading progress...', 'Загрузка прогресса...')}</div>;
   }
 
   if (error || !data) {
     return (
       <div className="card max-w-xl mx-auto p-6 text-center">
-        <h1 className="text-lg font-semibold text-clinical-900">Progress could not be loaded</h1>
+        <h1 className="text-lg font-semibold text-clinical-900">{text('Progress could not be loaded', 'Не удалось загрузить прогресс')}</h1>
         <p className="mt-2 text-sm text-clinical-600">{error}</p>
-        <button onClick={() => window.location.reload()} className="btn-primary mt-4">Try again</button>
+        <button onClick={() => window.location.reload()} className="btn-primary mt-4">{text('Try again', 'Повторить')}</button>
       </div>
     );
   }
@@ -76,25 +76,25 @@ export default function ProgressPage() {
         <StatCard
           title={text('Compliance', 'Выполнение плана')}
           value={`${Math.round(data.complianceRate)}%`}
-          subtitle="Exercise check-ins"
+          subtitle={text('Exercise check-ins', 'Чек-ины упражнений')}
           icon={Target}
         />
         <StatCard
           title={text('Total Reps', 'Всего повторений')}
           value={totalReps}
-          subtitle={`${data.sessions.length} sessions`}
+          subtitle={`${data.sessions.length} ${text('sessions', 'тренировок')}`}
           icon={TrendingUp}
         />
         <StatCard
           title={text('Avg Form Score', 'Средняя техника')}
           value={`${avgForm}%`}
-          subtitle={`ROM: ${avgRom}°`}
+          subtitle={`${text('Range', 'Диапазон')}: ${avgRom}°`}
           icon={Award}
         />
         <StatCard
           title={text('Recovery Streak', 'Серия восстановления')}
-          value={`${data.gamification.recovery_streak}d`}
-          subtitle={`Exercise: ${data.gamification.exercise_streak}d`}
+          value={text(`${data.gamification.recovery_streak}d`, `${data.gamification.recovery_streak} дн.`)}
+          subtitle={`${text('Exercise', 'Упражнения')}: ${data.gamification.exercise_streak}${text('d', 'д')}`}
           icon={Flame}
         />
       </div>

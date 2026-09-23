@@ -23,16 +23,17 @@ export class AIErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.failed) {
+      const russian = typeof document !== 'undefined' && document.documentElement.lang === 'ru';
       return (
         <div className="card p-5 text-center">
-          <p className="font-medium text-clinical-900">AI assistant is temporarily unavailable</p>
-          <p className="mt-1 text-sm text-clinical-500">Your dashboard and recovery data are still available.</p>
+          <p className="font-medium text-clinical-900">{russian ? 'AI-помощник временно недоступен' : 'AI assistant is temporarily unavailable'}</p>
+          <p className="mt-1 text-sm text-clinical-500">{russian ? 'Главная страница и данные восстановления продолжают работать.' : 'Your dashboard and recovery data are still available.'}</p>
           <button
             type="button"
             onClick={() => this.setState({ failed: false })}
             className="btn-secondary mt-3"
           >
-            Try AI again
+            {russian ? 'Попробовать снова' : 'Try AI again'}
           </button>
         </div>
       );

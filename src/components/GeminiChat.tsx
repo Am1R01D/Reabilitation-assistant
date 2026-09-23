@@ -49,7 +49,7 @@ export function GeminiChat() {
           setMessages(Array.isArray(saved) ? saved.filter(isChatMessage).slice(-40) : []);
         }
       } catch {
-        if (!cancelled) setError('Chat history is unavailable, but you can still send a message.');
+        if (!cancelled) setError(language === 'ru' ? 'История чата недоступна, но вы всё равно можете отправить сообщение.' : 'Chat history is unavailable, but you can still send a message.');
       } finally {
         if (!cancelled) setHistoryReady(true);
       }
@@ -65,7 +65,7 @@ export function GeminiChat() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     if (!historyReady || !storageKey) return;
@@ -113,13 +113,13 @@ export function GeminiChat() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Unable to send message.');
+      if (!res.ok) throw new Error(language === 'ru' ? 'Не удалось отправить сообщение.' : (data.error || 'Unable to send message.'));
       setMessages((current) => [
         ...current.map((item) => item.id === optimisticId ? data.userMessage : item),
         data.assistantMessage,
       ]);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Unable to send message.');
+      setError(requestError instanceof Error ? requestError.message : text('Unable to send message.', 'Не удалось отправить сообщение.'));
       setMessages((current) => current.map((item) =>
         item.id === optimisticId ? { ...item, status: 'failed' } : item
       ));
@@ -129,7 +129,7 @@ export function GeminiChat() {
   }
 
   return (
-    <section className="card p-5 xl:flex xl:max-h-[calc(100vh-7rem)] xl:min-h-[34rem] xl:flex-col" aria-label="AI recovery chat">
+    <section className="card p-5 xl:flex xl:max-h-[calc(100vh-7rem)] xl:min-h-[34rem] xl:flex-col" aria-label={text('AI recovery chat', 'AI-чат о восстановлении')}>
       <div className="flex items-center gap-2">
         <Brain className="w-5 h-5 text-medical-600" />
         <div>
@@ -154,7 +154,7 @@ export function GeminiChat() {
           </div>
         ))}
         {loading && (
-          <div className="chat-message-enter flex justify-start" aria-label="AI is typing">
+          <div className="chat-message-enter flex justify-start" aria-label={text('AI is typing', 'AI печатает')}>
             <div className="flex items-center gap-1 rounded-2xl bg-clinical-100 px-4 py-3">
               <span className="chat-typing-dot" />
               <span className="chat-typing-dot [animation-delay:150ms]" />
@@ -174,7 +174,7 @@ export function GeminiChat() {
           placeholder={text('Ask about your check-ins or progress…', 'Спросите о чек-инах или прогрессе…')}
           className="min-w-0 flex-1 rounded-lg border border-clinical-200 px-3 py-2 text-sm focus:border-medical-500 focus:outline-none"
         />
-        <button type="submit" disabled={loading || !question.trim()} className="btn-primary px-3" aria-label="Send message">
+        <button type="submit" disabled={loading || !question.trim()} className="btn-primary px-3" aria-label={text('Send message', 'Отправить сообщение')}>
           <Send className="w-4 h-4" />
         </button>
       </form>

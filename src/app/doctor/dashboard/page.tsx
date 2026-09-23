@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { AlertTriangle, Users, ArrowRight } from 'lucide-react';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import { statusColor } from '@/lib/utils';
+import { useLanguage } from '@/components/LanguageProvider';
 
 interface PatientSummary {
   id: number;
@@ -23,6 +24,14 @@ interface PatientSummary {
 export default function DoctorDashboard() {
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const { text, language } = useLanguage();
+
+  const localizeCondition = (condition: string) => language !== 'ru' ? condition : condition
+    .replace('Broken arm', 'Перелом руки')
+    .replace('Broken leg', 'Перелом ноги')
+    .replace('cast still on', 'гипс ещё не снят')
+    .replace('cast removed', 'гипс снят');
+  const localizeStatus = (status: string) => language !== 'ru' ? status : ({ stable: 'стабильно', attention: 'требует внимания', improving: 'улучшение' }[status.toLowerCase()] || status);
 
   useEffect(() => {
     fetch('/api/doctor/patients')
@@ -36,7 +45,7 @@ export default function DoctorDashboard() {
   const totalAlerts = patients.reduce((s, p) => s + p.alertCount, 0);
 
   if (loading) {
-    return <div className="text-center py-20 text-clinical-500 animate-pulse">Loading patients...</div>;
+    return <div className="text-center py-20 text-clinical-500 animate-pulse">{text('Loading patients...', 'Загрузка пациентов...')}</div>;
   }
 
   return (
@@ -44,14 +53,14 @@ export default function DoctorDashboard() {
       <div className="rounded-3xl bg-clinical-900 text-white p-6 sm:p-8 flex items-center justify-between gap-4 relative overflow-hidden">
         <div className="absolute -right-12 -top-16 w-52 h-52 rounded-full bg-medical-500/30 blur-2xl" />
         <div>
-          <p className="text-medical-200 text-sm font-medium mb-2">CLINICIAN WORKSPACE</p>
-          <h1 className="text-3xl font-bold tracking-tight">Patient Overview</h1>
-          <p className="text-clinical-300 mt-2">Monitor recovery progress and alerts</p>
+          <p className="text-medical-200 text-sm font-medium mb-2">{text('CLINICIAN WORKSPACE', 'КАБИНЕТ ВРАЧА')}</p>
+          <h1 className="text-3xl font-bold tracking-tight">{text('Patient Overview', 'Обзор пациентов')}</h1>
+          <p className="text-clinical-300 mt-2">{text('Monitor recovery progress and alerts', 'Следите за восстановлением и важными изменениями')}</p>
         </div>
         {totalAlerts > 0 && (
           <div className="relative flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-xl text-sm">
             <AlertTriangle className="w-4 h-4" />
-            {totalAlerts} alert{totalAlerts !== 1 ? 's' : ''} need review
+            {text(`${totalAlerts} alert${totalAlerts !== 1 ? 's' : ''} need review`, `Требуют проверки: ${totalAlerts}`)}
           </div>
         )}
       </div>
@@ -61,7 +70,7 @@ export default function DoctorDashboard() {
       {patients.length === 0 ? (
         <div className="card p-12 text-center">
           <Users className="w-12 h-12 text-clinical-300 mx-auto mb-3" />
-          <p className="text-clinical-500">No patients assigned</p>
+          <p className="text-clinical-500">{text('No patients assigned', 'Нет прикреплённых пациентов')}</p>
         </div>
       ) : (
         <div className="card overflow-hidden shadow-[0_15px_35px_rgba(15,53,58,0.08)]">
@@ -69,14 +78,14 @@ export default function DoctorDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-clinical-50 border-b border-clinical-200">
-                  <th className="text-left px-4 py-3 font-medium text-clinical-600">Patient</th>
-                  <th className="text-left px-4 py-3 font-medium text-clinical-600">Status</th>
-                  <th className="text-left px-4 py-3 font-medium text-clinical-600">Pain</th>
-                  <th className="text-left px-4 py-3 font-medium text-clinical-600">Mobility</th>
-                  <th className="text-left px-4 py-3 font-medium text-clinical-600">Compliance</th>
-                  <th className="text-left px-4 py-3 font-medium text-clinical-600">Last Check-in</th>
-                  <th className="text-left px-4 py-3 font-medium text-clinical-600">Performance</th>
-                  <th className="text-left px-4 py-3 font-medium text-clinical-600">Alerts</th>
+                  <th className="text-left px-4 py-3 font-medium text-clinical-600">{text('Patient', 'Пациент')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-clinical-600">{text('Status', 'Статус')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-clinical-600">{text('Pain', 'Боль')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-clinical-600">{text('Mobility', 'Подвижность')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-clinical-600">{text('Compliance', 'Выполнение')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-clinical-600">{text('Last Check-in', 'Последний чек-ин')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-clinical-600">{text('Performance', 'Результат')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-clinical-600">{text('Alerts', 'Предупреждения')}</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -85,11 +94,11 @@ export default function DoctorDashboard() {
                   <tr key={patient.id} className="border-b border-clinical-100 hover:bg-clinical-50">
                     <td className="px-4 py-3">
                       <p className="font-medium text-clinical-900">{patient.name}</p>
-                      <p className="text-xs text-clinical-500">{patient.condition}</p>
+                      <p className="text-xs text-clinical-500">{localizeCondition(patient.condition)}</p>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColor(patient.status)}`}>
-                        {patient.status}
+                        {localizeStatus(patient.status)}
                       </span>
                     </td>
                     <td className="px-4 py-3">{patient.pain != null ? `${patient.pain}/10` : '—'}</td>
@@ -100,7 +109,7 @@ export default function DoctorDashboard() {
                     </td>
                     <td className="px-4 py-3">
                       {patient.latestSession
-                        ? `${patient.latestSession.reps} reps, ${Math.round(patient.latestSession.form_score)}%`
+                        ? text(`${patient.latestSession.reps} reps, ${Math.round(patient.latestSession.form_score)}%`, `${patient.latestSession.reps} повт., техника ${Math.round(patient.latestSession.form_score)}%`)
                         : '—'}
                     </td>
                     <td className="px-4 py-3">
@@ -118,7 +127,7 @@ export default function DoctorDashboard() {
                         href={`/doctor/patient/${patient.id}`}
                         className="text-medical-600 hover:text-medical-700 flex items-center gap-1"
                       >
-                        View <ArrowRight className="w-3.5 h-3.5" />
+                        {text('View', 'Открыть')} <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                     </td>
                   </tr>

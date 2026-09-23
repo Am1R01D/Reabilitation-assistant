@@ -6,8 +6,8 @@ import { LanguageProvider } from '@/components/LanguageProvider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Re.assist — Home Rehabilitation Platform',
-  description: 'Doctor-prescribed physical therapy with AI-assisted recovery monitoring',
+  title: 'Re.assist',
+  description: 'Цифровой помощник для домашней реабилитации',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

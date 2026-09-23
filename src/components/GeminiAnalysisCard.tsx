@@ -18,7 +18,7 @@ export function GeminiAnalysisCard({
 }: GeminiAnalysisCardProps) {
   const [analysis, setAnalysis] = useState(initialAnalysis);
   const [loading, setLoading] = useState(false);
-  const { text } = useLanguage();
+  const { text, language } = useLanguage();
 
   async function runAnalysis() {
     setLoading(true);
@@ -26,7 +26,7 @@ export function GeminiAnalysisCard({
       const res = await fetch('/api/gemini/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: patientId ? JSON.stringify({ patientId }) : '{}',
+        body: JSON.stringify({ patientId, language }),
       });
       const data = await res.json();
       if (data.analysis) {
@@ -78,7 +78,7 @@ export function GeminiAnalysisCard({
           {analysis.positiveTrends.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-2">
-                Positive Trends
+                {text('Positive Trends', 'Положительная динамика')}
               </h4>
               <ul className="space-y-1">
                 {analysis.positiveTrends.map((t, i) => (
@@ -93,7 +93,7 @@ export function GeminiAnalysisCard({
           {analysis.concerningChanges.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">
-                Changes Warranting Review
+                {text('Changes Warranting Review', 'Изменения для внимания врача')}
               </h4>
               <ul className="space-y-1">
                 {analysis.concerningChanges.map((c, i) => (
@@ -107,7 +107,7 @@ export function GeminiAnalysisCard({
 
           <div>
             <h4 className="text-xs font-semibold text-clinical-500 uppercase tracking-wide mb-1">
-              Adherence
+              {text('Adherence', 'Соблюдение плана')}
             </h4>
             <p className="text-sm text-clinical-700">{analysis.adherenceSummary}</p>
           </div>
@@ -115,7 +115,7 @@ export function GeminiAnalysisCard({
           {analysis.clinicianReviewPoints.length > 0 && (
             <div className="bg-clinical-50 rounded-lg p-3">
               <h4 className="text-xs font-semibold text-clinical-600 uppercase tracking-wide mb-2">
-                Points for Clinician Review
+                {text('Points for Clinician Review', 'Для обсуждения с врачом')}
               </h4>
               <ul className="space-y-1">
                 {analysis.clinicianReviewPoints.map((p, i) => (
