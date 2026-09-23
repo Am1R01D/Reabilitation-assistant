@@ -16,6 +16,8 @@ interface CheckInData {
   date: string;
   pain: number;
   mobility: number;
+  fatigue: number;
+  sleep_quality: number;
   exercises_completed: number;
 }
 
@@ -36,6 +38,8 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
     date: c.date.slice(5),
     pain: c.pain,
     mobility: c.mobility,
+    fatigue: c.fatigue,
+    sleep: c.sleep_quality,
   }));
 
   const complianceData = checkIns.map((c) => ({
@@ -53,7 +57,7 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="card p-5">
-        <h3 className="font-semibold text-clinical-900 mb-4">Pain & Mobility</h3>
+        <h3 className="font-semibold text-clinical-900 mb-4">Daily Check-in Trends</h3>
         {painData.length > 0 ? (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={painData}>
@@ -63,6 +67,8 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
               <Tooltip />
               <Line type="monotone" dataKey="pain" stroke="#ef4444" strokeWidth={2} name="Pain" dot={{ r: 3 }} />
               <Line type="monotone" dataKey="mobility" stroke="#2d9186" strokeWidth={2} name="Mobility" dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="fatigue" stroke="#f59e0b" strokeWidth={2} name="Fatigue" dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="sleep" stroke="#6366f1" strokeWidth={2} name="Sleep quality" dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         ) : (

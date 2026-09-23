@@ -77,6 +77,10 @@ export default function ExerciseSessionPage() {
         <p className="text-clinical-500 mt-1">Position yourself so your upper body is visible to the camera</p>
       </div>
 
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <strong>Demo version:</strong> camera tracking currently supports a limited set of exercises, including this bicep curl session.
+      </div>
+
       <SafetyBanner />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

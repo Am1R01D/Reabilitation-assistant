@@ -6,17 +6,25 @@ import { ProgressCharts } from '@/components/ProgressCharts';
 import { StatCard } from '@/components/StatCard';
 import { GeminiAnalysisCard } from '@/components/GeminiAnalysisCard';
 import { SafetyBanner } from '@/components/SafetyBanner';
+import { GeminiChat } from '@/components/GeminiChat';
 
 export default function ProgressPage() {
   const [data, setData] = useState<{
-    checkIns: Array<{ date: string; pain: number; mobility: number; exercises_completed: number }>;
+    checkIns: Array<{
+      date: string;
+      pain: number;
+      mobility: number;
+      fatigue: number;
+      sleep_quality: number;
+      exercises_completed: number;
+    }>;
     sessions: Array<{ created_at: string; range_of_motion: number; form_score: number; reps: number }>;
     gamification: { recovery_streak: number; exercise_streak: number; weekly_goal: number; weekly_completed: number };
     complianceRate: number;
   } | null>(null);
 
   useEffect(() => {
-    fetch('/api/progress')
+    fetch('/api/progress', { cache: 'no-store' })
       .then((r) => r.json())
       .then(setData);
   }, []);
@@ -74,6 +82,7 @@ export default function ProgressPage() {
       <ProgressCharts checkIns={data.checkIns} sessions={data.sessions} />
 
       <GeminiAnalysisCard showRefresh />
+      <GeminiChat />
     </div>
   );
 }

@@ -81,6 +81,15 @@ function initSchema(database: DatabaseSync) {
       FOREIGN KEY (patient_id) REFERENCES patients(id)
     );
 
+    CREATE TABLE IF NOT EXISTS gemini_chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      patient_id INTEGER NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (patient_id) REFERENCES patients(id)
+    );
+
     CREATE TABLE IF NOT EXISTS gamification (
       patient_id INTEGER PRIMARY KEY,
       recovery_streak INTEGER NOT NULL DEFAULT 0,

@@ -14,9 +14,18 @@ import {
 import { StatCard } from '@/components/StatCard';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import { GeminiAnalysisCard } from '@/components/GeminiAnalysisCard';
+import { GeminiChat } from '@/components/GeminiChat';
 
 interface DashboardData {
-  checkIns: Array<{ pain: number; mobility: number; date: string; exercises_completed: number }>;
+  checkIns: Array<{
+    pain: number;
+    mobility: number;
+    fatigue: number;
+    sleep_quality: number;
+    swelling: 'none' | 'mild' | 'severe';
+    date: string;
+    exercises_completed: number;
+  }>;
   todayCheckIn: unknown;
   gamification: {
     recovery_streak: number;
@@ -35,15 +44,15 @@ export default function PatientDashboard() {
 
   useEffect(() => {
     async function load() {
-      const [progressRes, checkInRes, sessionRes] = await Promise.all([
+      const [progressRes, checkInRes] = await Promise.all([
         fetch('/api/progress', { cache: 'no-store' }),
         fetch('/api/check-in', { cache: 'no-store' }),
-        fetch('/api/exercises/session', { cache: 'no-store' }),
       ]);
       const progress = await progressRes.json();
       const checkIn = await checkInRes.json();
-      const sessions = await sessionRes.json();
-      setData({ ...progress, ...checkIn, sessions: sessions.sessions });
+      // Progress is the canonical, chronologically sorted data source. The
+      // check-in endpoint is only used here for today's completion state.
+      setData({ ...progress, todayCheckIn: checkIn.todayCheckIn });
       setLoading(false);
     }
     load();
@@ -162,6 +171,30 @@ export default function PatientDashboard() {
 
         <GeminiAnalysisCard showRefresh />
       </div>
+
+      {latestCheckIn && (
+        <div className="card p-5">
+          <h3 className="font-semibold text-clinical-900">Latest Daily Check-in</h3>
+          <p className="text-xs text-clinical-500 mt-1">Recorded {latestCheckIn.date}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
+            <CheckInDetail label="Swelling" value={latestCheckIn.swelling} />
+            <CheckInDetail label="Fatigue" value={`${latestCheckIn.fatigue}/10`} />
+            <CheckInDetail label="Sleep quality" value={`${latestCheckIn.sleep_quality}/10`} />
+            <CheckInDetail label="Exercises" value={latestCheckIn.exercises_completed ? 'Completed' : 'Not completed'} />
+          </div>
+        </div>
+      )}
+
+      <GeminiChat />
+    </div>
+  );
+}
+
+function CheckInDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-clinical-50 p-3">
+      <p className="text-xs text-clinical-500">{label}</p>
+      <p className="mt-1 font-medium capitalize text-clinical-900">{value}</p>
     </div>
   );
 }
