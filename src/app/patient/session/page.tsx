@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Camera, Loader2, Play, Square, RotateCcw } from 'lucide-react';
-import { useBicepCurlTracker } from '@/hooks/useBicepCurlTracker';
+import { useExerciseTracker } from '@/hooks/useExerciseTracker';
 import { SafetyBanner } from '@/components/SafetyBanner';
+import { getExerciseDefinition } from '@/lib/exercises';
 
 export default function ExerciseSessionPage() {
   const router = useRouter();
-  const { videoRef, canvasRef, state, startSession, stopSession } = useBicepCurlTracker();
+  const searchParams = useSearchParams();
+  const exercise = getExerciseDefinition(searchParams.get('exercise'));
+  const { videoRef, canvasRef, state, startSession, stopSession } = useExerciseTracker(exercise.id);
   const [saving, setSaving] = useState(false);
   const [results, setResults] = useState<{
     reps: number;
@@ -28,7 +31,7 @@ export default function ExerciseSessionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...metrics,
-          exerciseType: 'bicep_curl',
+          exerciseType: exercise.id,
         }),
       });
       setResults(metrics);
@@ -41,7 +44,7 @@ export default function ExerciseSessionPage() {
     return (
       <div className="max-w-lg mx-auto space-y-6">
         <div className="text-center py-6">
-          <h2 className="text-2xl font-bold text-clinical-900">Session Complete</h2>
+          <h2 className="text-2xl font-bold text-clinical-900">{exercise.name} Complete</h2>
           <p className="text-clinical-500 mt-1">Great work on your rehabilitation!</p>
         </div>
 
@@ -73,12 +76,12 @@ export default function ExerciseSessionPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-clinical-900">Bicep Curl Session</h1>
-        <p className="text-clinical-500 mt-1">Position yourself so your upper body is visible to the camera</p>
+        <h1 className="text-2xl font-bold text-clinical-900">{exercise.name}</h1>
+        <p className="text-clinical-500 mt-1">{exercise.cameraInstruction}</p>
       </div>
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <strong>Demo version:</strong> camera tracking currently supports a limited set of exercises, including this bicep curl session.
+        <strong>Demo version:</strong> camera tracking currently supports a limited set of rehabilitation exercises.
       </div>
 
       <SafetyBanner />
@@ -108,8 +111,8 @@ export default function ExerciseSessionPage() {
           <div className="card p-5">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <p className="text-xs text-clinical-500">Elbow Angle</p>
-                <p className="text-2xl font-bold text-clinical-900">{state.elbowAngle}°</p>
+                <p className="text-xs text-clinical-500">{exercise.angleLabel}</p>
+                <p className="text-2xl font-bold text-clinical-900">{state.jointAngle}°</p>
               </div>
               <div>
                 <p className="text-xs text-clinical-500">Form Score</p>
@@ -120,7 +123,7 @@ export default function ExerciseSessionPage() {
               <p className="text-xs text-clinical-500 mb-1">Movement State</p>
               <span
                 className={`inline-block px-3 py-1 rounded-full text-sm font-medium capitalize ${
-                  state.movementState === 'bent' || state.movementState === 'curling'
+                  state.movementState === 'contracted' || state.movementState === 'moving'
                     ? 'bg-medical-100 text-medical-700'
                     : state.movementState === 'extended'
                       ? 'bg-emerald-100 text-emerald-700'

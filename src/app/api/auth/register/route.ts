@@ -22,8 +22,10 @@ async function getOrCreateClinicDoctor() {
 }
 
 export async function POST(request: NextRequest) {
-  const { name, email, password, condition } = await request.json();
-  if (!name || !email || !password || !condition) {
+  const { name, email, password, injuryType, castStatus } = await request.json();
+  const validInjuries = ['broken_arm', 'broken_leg'];
+  const validCastStatuses = ['cast_on', 'cast_removed'];
+  if (!name || !email || !password || !validInjuries.includes(injuryType) || !validCastStatuses.includes(castStatus)) {
     return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
   }
   if (password.length < 8) {
@@ -59,6 +61,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unable to create patient profile' }, { status: 500 });
   }
 
+  const condition = `${injuryType === 'broken_arm' ? 'Broken arm' : 'Broken leg'} — ${castStatus === 'cast_on' ? 'cast still on' : 'cast removed'}`;
   const { data: patient, error: patientError } = await supabase.from('patients').insert({
     user_id: user.id, doctor_id: doctor.id, condition, start_date: new Date().toISOString().slice(0, 10),
   }).select('id').single();

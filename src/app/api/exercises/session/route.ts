@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPatientByUserId, getSession } from '@/lib/auth';
-import { getDb } from '@/lib/db';
-import { evaluatePerformanceAlerts } from '@/lib/alerts';
-import { updateWeeklyProgress } from '@/lib/gamification';
-import type { ExerciseSession } from '@/lib/types';
+import { getSupabaseAdmin } from '@/lib/supabase';
+import { exerciseDefinitions, parsePatientCondition } from '@/lib/exercises';
 
 export async function GET() {
   const session = await getSession();
@@ -14,14 +12,15 @@ export async function GET() {
   const patient = await getPatientByUserId(session.userId);
   if (!patient) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
 
-  const db = getDb();
-  const sessions = db
-    .prepare(
-      'SELECT * FROM exercise_sessions WHERE patient_id = ? ORDER BY created_at DESC LIMIT 30'
-    )
-    .all(patient.id);
+  const { data: sessions, error } = await getSupabaseAdmin()
+    .from('exercise_sessions')
+    .select('*')
+    .eq('patient_id', patient.id)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error) return NextResponse.json({ error: 'Unable to load exercise sessions' }, { status: 500 });
 
-  return NextResponse.json({ sessions });
+  return NextResponse.json({ sessions: sessions ?? [] });
 }
 
 export async function POST(request: NextRequest) {
@@ -46,35 +45,39 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'All metrics required' }, { status: 400 });
   }
 
-  const db = getDb();
-  const result = db
-    .prepare(
-      `INSERT INTO exercise_sessions (patient_id, exercise_type, reps, average_angle, range_of_motion, form_score, duration)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    )
-    .run(
-      patient.id,
-      exerciseType || 'bicep_curl',
-      Number(reps),
-      Number(averageAngle),
-      Number(rangeOfMotion),
-      Number(formScore),
-      Number(exerciseDuration)
-    );
+  const exercise = exerciseDefinitions.find((item) => item.id === exerciseType);
+  if (!exercise) return NextResponse.json({ error: 'Unknown exercise' }, { status: 400 });
+  const recovery = parsePatientCondition(patient.condition);
+  if (recovery.bodyArea !== 'unknown' && exercise.bodyArea !== recovery.bodyArea) {
+    return NextResponse.json({ error: 'Exercise is not part of this recovery plan' }, { status: 403 });
+  }
+  if (exercise.requiresCastRemoved && !recovery.castRemoved && recovery.bodyArea !== 'unknown') {
+    return NextResponse.json({ error: 'Exercise unlocks after cast removal' }, { status: 403 });
+  }
 
-  updateWeeklyProgress(patient.id);
+  const supabase = getSupabaseAdmin();
+  const { data: sessionRecord, error: insertError } = await supabase
+    .from('exercise_sessions')
+    .insert({
+      patient_id: patient.id,
+      exercise_type: exercise.id,
+      reps: Number(reps),
+      average_angle: Number(averageAngle),
+      range_of_motion: Number(rangeOfMotion),
+      form_score: Number(formScore),
+      duration: Number(exerciseDuration),
+    })
+    .select('*')
+    .single();
+  if (insertError || !sessionRecord) return NextResponse.json({ error: 'Unable to save exercise session' }, { status: 500 });
 
-  const allSessions = db
-    .prepare(
-      'SELECT * FROM exercise_sessions WHERE patient_id = ? ORDER BY created_at DESC LIMIT 10'
-    )
-    .all(patient.id) as unknown as ExerciseSession[];
-
-  evaluatePerformanceAlerts(patient.id, allSessions);
-
-  const sessionRecord = db
-    .prepare('SELECT * FROM exercise_sessions WHERE id = ?')
-    .get(result.lastInsertRowid);
+  const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from('exercise_sessions')
+    .select('id', { count: 'exact', head: true })
+    .eq('patient_id', patient.id)
+    .gte('created_at', weekStart);
+  await supabase.from('gamification').update({ weekly_completed: count ?? 0 }).eq('patient_id', patient.id);
 
   return NextResponse.json({ session: sessionRecord });
 }

@@ -8,13 +8,14 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [condition, setCondition] = useState('');
+  const [injuryType, setInjuryType] = useState<'broken_arm' | 'broken_leg'>('broken_arm');
+  const [castStatus, setCastStatus] = useState<'cast_on' | 'cast_removed'>('cast_on');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setLoading(true); setMessage('');
-    const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password, condition }) });
+    const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password, injuryType, castStatus }) });
     const data = await res.json(); setLoading(false);
     setMessage(res.ok ? 'Account created. You can sign in now.' : data.error || 'Registration failed');
   }
@@ -26,7 +27,20 @@ export default function RegisterPage() {
         <input className="input-field" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} required />
         <input className="input-field" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <input className="input-field" type="password" minLength={8} placeholder="Password (minimum 8 characters)" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <input className="input-field" placeholder="Rehabilitation condition" value={condition} onChange={(e) => setCondition(e.target.value)} required />
+        <div>
+          <label className="label">Injury</label>
+          <select className="input-field" value={injuryType} onChange={(e) => setInjuryType(e.target.value as 'broken_arm' | 'broken_leg')}>
+            <option value="broken_arm">Broken arm</option>
+            <option value="broken_leg">Broken leg</option>
+          </select>
+        </div>
+        <div>
+          <label className="label">Cast status</label>
+          <select className="input-field" value={castStatus} onChange={(e) => setCastStatus(e.target.value as 'cast_on' | 'cast_removed')}>
+            <option value="cast_on">Cast is still on</option>
+            <option value="cast_removed">Cast has been removed</option>
+          </select>
+        </div>
         <p className="text-xs text-medical-800 bg-medical-50 rounded-xl px-3 py-2">Your clinic will assign a clinician after registration.</p>
         {message && <p className={`text-sm rounded-xl px-3 py-2 ${message.startsWith('Account') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{message}</p>}
         <button className="btn-primary w-full flex justify-center gap-2" disabled={loading}>{loading && <Loader2 className="w-4 h-4 animate-spin" />}Create account</button>

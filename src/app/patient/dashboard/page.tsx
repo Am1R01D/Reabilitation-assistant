@@ -167,7 +167,7 @@ export default function PatientDashboard() {
               <div className="flex items-center gap-3">
                 <Dumbbell className="w-5 h-5 text-medical-600" />
                 <div>
-                  <p className="font-medium text-sm">Bicep Curl Exercise</p>
+                  <p className="font-medium text-sm">Rehabilitation Exercises</p>
                   <p className="text-xs text-clinical-500">
                     {latestSession
                       ? `Last: ${latestSession.reps} reps, ${Math.round(latestSession.form_score)}% form`
