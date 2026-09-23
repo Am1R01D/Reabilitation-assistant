@@ -44,10 +44,12 @@ export function ProgressCharts({ checkIns, sessions }: ProgressChartsProps) {
     sleep: c.sleep_quality,
   }));
 
-  const complianceData = checkIns.map((c) => ({
-    date: c.date.slice(5),
-    completed: c.exercises_completed ? 1 : 0,
-  }));
+  const completionByDate = new Map<string, number>();
+  checkIns.forEach((item) => completionByDate.set(item.date.slice(0, 10), item.exercises_completed ? 1 : 0));
+  sessions.forEach((item) => completionByDate.set(item.created_at.split('T')[0], 1));
+  const complianceData = Array.from(completionByDate.entries())
+    .sort(([first], [second]) => first.localeCompare(second))
+    .map(([date, completed]) => ({ date: date.slice(5), completed }));
 
   const sessionData = sessions.map((s) => ({
     date: s.created_at.split('T')[0]?.slice(5) || s.created_at.slice(5, 10),

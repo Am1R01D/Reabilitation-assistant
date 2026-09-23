@@ -71,6 +71,13 @@ export async function POST(request: NextRequest) {
     .single();
   if (insertError || !sessionRecord) return NextResponse.json({ error: 'Unable to save exercise session' }, { status: 500 });
 
+  const today = new Date().toISOString().slice(0, 10);
+  await supabase
+    .from('check_ins')
+    .update({ exercises_completed: true })
+    .eq('patient_id', patient.id)
+    .eq('date', today);
+
   const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { count } = await supabase
     .from('exercise_sessions')

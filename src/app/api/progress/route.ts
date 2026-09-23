@@ -27,8 +27,13 @@ export async function GET() {
     return NextResponse.json({ error: 'Unable to load progress data' }, { status: 500 });
   }
 
-  const checkIns = checkInsResult.data ?? [];
+  const rawCheckIns = checkInsResult.data ?? [];
   const sessions = sessionsResult.data ?? [];
+  const sessionDates = new Set(sessions.map((item) => String(item.created_at).slice(0, 10)));
+  const checkIns = rawCheckIns.map((item) => ({
+    ...item,
+    exercises_completed: Boolean(item.exercises_completed) || sessionDates.has(String(item.date).slice(0, 10)),
+  }));
   let gamification = gamificationResult.data;
   if (!gamification) {
     const created = await supabase
@@ -43,10 +48,15 @@ export async function GET() {
     gamification = created.data;
   }
 
-  const complianceRate =
-    checkIns.length > 0
-      ? (checkIns.filter((c) => c.exercises_completed).length / checkIns.length) * 100
-      : 0;
+  const trackedDates = new Set([
+    ...checkIns.map((item) => String(item.date).slice(0, 10)),
+    ...Array.from(sessionDates),
+  ]);
+  const completedDates = new Set([
+    ...checkIns.filter((item) => item.exercises_completed).map((item) => String(item.date).slice(0, 10)),
+    ...Array.from(sessionDates),
+  ]);
+  const complianceRate = trackedDates.size > 0 ? (completedDates.size / trackedDates.size) * 100 : 0;
 
   return NextResponse.json({
     checkIns,

@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { StatCard } from '@/components/StatCard';
 import { SafetyBanner } from '@/components/SafetyBanner';
-import { GeminiAnalysisCard } from '@/components/GeminiAnalysisCard';
 import { GeminiChat } from '@/components/GeminiChat';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
 import { useLanguage } from '@/components/LanguageProvider';
@@ -143,7 +142,7 @@ export default function PatientDashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <div className="card p-5 card-interactive">
           <h3 className="font-semibold text-clinical-900 mb-4">{text("Today's Plan", 'План на сегодня')}</h3>
           <div className="space-y-3">
@@ -181,10 +180,6 @@ export default function PatientDashboard() {
             </Link>
           </div>
         </div>
-
-        <AIErrorBoundary>
-          <GeminiAnalysisCard showRefresh />
-        </AIErrorBoundary>
       </div>
 
       {latestCheckIn && (

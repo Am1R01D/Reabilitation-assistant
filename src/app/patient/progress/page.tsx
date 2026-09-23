@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { Flame, Target, TrendingUp, Award, Download } from 'lucide-react';
 import { ProgressCharts } from '@/components/ProgressCharts';
 import { StatCard } from '@/components/StatCard';
-import { GeminiAnalysisCard } from '@/components/GeminiAnalysisCard';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import { GeminiChat } from '@/components/GeminiChat';
 import { AIErrorBoundary } from '@/components/AIErrorBoundary';
@@ -157,9 +156,6 @@ export default function ProgressPage() {
 
       <ProgressCharts checkIns={data.checkIns} sessions={data.sessions} />
 
-      <AIErrorBoundary>
-        <GeminiAnalysisCard showRefresh />
-      </AIErrorBoundary>
       </div>
 
       <aside className="xl:sticky xl:top-6">
