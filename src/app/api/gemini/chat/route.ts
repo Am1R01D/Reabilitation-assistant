@@ -15,6 +15,45 @@ function cleanEnvironmentValue(value: string | undefined) {
   return cleaned;
 }
 
+function getErrorStatus(error: unknown) {
+  if (!error || typeof error !== 'object' || !('status' in error)) return 0;
+  return Number(error.status) || 0;
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function createLocalReply(
+  language: 'ru' | 'en',
+  checkIns: CheckIn[],
+  sessions: ExerciseSession[]
+) {
+  const latest = checkIns[0];
+  if (language === 'ru') {
+    if (!latest && sessions.length === 0) {
+      return 'Gemini временно перегружен. Пока в аккаунте нет данных для анализа — заполните первый чек-ин или выполните упражнение, и я смогу описать ваш прогресс.';
+    }
+    const checkInText = latest
+      ? `Последний чек-ин: боль ${latest.pain}/10, подвижность ${latest.mobility}/10, отёк — ${latest.swelling === 'none' ? 'нет' : latest.swelling === 'mild' ? 'лёгкий' : 'сильный'}.`
+      : 'Чек-инов пока нет.';
+    const sessionText = sessions[0]
+      ? `Последняя тренировка: ${sessions[0].reps} повторений, техника ${Math.round(sessions[0].form_score)}%.`
+      : 'Тренировок пока нет.';
+    return `Gemini временно перегружен, поэтому показываю локальную сводку. ${checkInText} ${sessionText}`;
+  }
+  if (!latest && sessions.length === 0) {
+    return 'Gemini is temporarily busy. There is no recovery data yet — complete a check-in or exercise to start tracking progress.';
+  }
+  const checkInText = latest
+    ? `Latest check-in: pain ${latest.pain}/10, mobility ${latest.mobility}/10, swelling ${latest.swelling}.`
+    : 'No check-ins yet.';
+  const sessionText = sessions[0]
+    ? `Latest exercise: ${sessions[0].reps} reps with ${Math.round(sessions[0].form_score)}% form.`
+    : 'No exercise sessions yet.';
+  return `Gemini is temporarily busy, so this is a local summary. ${checkInText} ${sessionText}`;
+}
+
 export async function GET() {
   const session = await getSession();
   if (!session || session.role !== 'patient') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -31,7 +70,8 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const message = typeof body.message === 'string' ? body.message.trim() : '';
-  const responseLanguage = body.language === 'ru' ? 'Russian' : 'English';
+  const language = body.language === 'ru' ? 'ru' : 'en';
+  const responseLanguage = language === 'ru' ? 'Russian' : 'English';
   if (!message || message.length > 1000) return NextResponse.json({ error: 'Message must be between 1 and 1000 characters.' }, { status: 400 });
 
   const rawHistory: unknown[] = Array.isArray(body.history) ? body.history : [];
@@ -71,6 +111,8 @@ export async function POST(request: NextRequest) {
   const configuredModel = cleanEnvironmentValue(process.env.GEMINI_MODEL);
   const modelCandidates = Array.from(new Set([
     configuredModel,
+    'gemini-3.6-flash',
+    'gemini-3.5-flash-lite',
     'gemini-3.5-flash',
     'gemini-3.8-flash',
     'gemini-flash-latest',
@@ -81,28 +123,28 @@ export async function POST(request: NextRequest) {
   const genAI = new GoogleGenerativeAI(apiKey);
 
   for (const modelName of modelCandidates) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction: CHAT_INSTRUCTIONS,
-      });
-      const result = await model.generateContent(prompt);
-      reply = result.response.text().trim();
-      if (reply) break;
-    } catch (error) {
-      const status = typeof error === 'object' && error && 'status' in error ? String(error.status) : 'unknown';
-      console.error('Gemini chat model failed', { model: modelName, status });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: CHAT_INSTRUCTIONS,
+        });
+        const result = await model.generateContent(prompt);
+        reply = result.response.text().trim();
+        if (reply) break;
+      } catch (error) {
+        const status = getErrorStatus(error);
+        console.error('Gemini chat model failed', { model: modelName, status, attempt: attempt + 1 });
+        const retryable = status === 429 || status >= 500;
+        if (!retryable || attempt === 1) break;
+        await wait(350 * (2 ** attempt));
+      }
     }
+    if (reply) break;
   }
 
   if (!reply) {
-    return NextResponse.json(
-      {
-        error: 'Gemini could not answer. Check the API key restrictions, quota, and Vercel function logs.',
-        code: 'GEMINI_REQUEST_FAILED',
-      },
-      { status: 502 }
-    );
+    reply = createLocalReply(language, checkIns, sessions);
   }
 
   const now = new Date().toISOString();
