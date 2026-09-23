@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Camera, Loader2, Play, Square, RotateCcw } from 'lucide-react';
+import { Camera, Loader2, Play, Square, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { useExerciseTracker } from '@/hooks/useExerciseTracker';
 import { SafetyBanner } from '@/components/SafetyBanner';
 import { getExerciseDefinition } from '@/lib/exercises';
@@ -16,6 +16,8 @@ export default function ExerciseSessionPage() {
   const exerciseName = language === 'ru' ? exercise.nameRu : exercise.name;
   const { videoRef, canvasRef, state, startSession, stopSession } = useExerciseTracker(exercise.id, language);
   const [saving, setSaving] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const lastSpokenRef = useRef('');
   const [results, setResults] = useState<{
     reps: number;
     averageAngle: number;
@@ -24,8 +26,30 @@ export default function ExerciseSessionPage() {
     exerciseDuration: number;
   } | null>(null);
 
+  useEffect(() => {
+    if (!voiceEnabled || !state.isRunning || !state.feedback || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (lastSpokenRef.current === state.feedback) return;
+
+    lastSpokenRef.current = state.feedback;
+    const utterance = new SpeechSynthesisUtterance(state.feedback);
+    utterance.lang = language === 'ru' ? 'ru-RU' : 'en-US';
+    utterance.rate = 0.95;
+    const matchingVoice = window.speechSynthesis
+      .getVoices()
+      .find((voice) => voice.lang.toLowerCase().startsWith(language));
+    if (matchingVoice) utterance.voice = matchingVoice;
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  }, [language, state.feedback, state.isRunning, voiceEnabled]);
+
+  useEffect(() => () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+  }, []);
+
   async function handleStop() {
     const metrics = stopSession();
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     setSaving(true);
 
     try {
@@ -79,8 +103,25 @@ export default function ExerciseSessionPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-clinical-900">{exerciseName}</h1>
-        <p className="text-clinical-500 mt-1">{language === 'ru' ? exercise.cameraInstructionRu : exercise.cameraInstruction}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-clinical-900">{exerciseName}</h1>
+            <p className="text-clinical-500 mt-1">{language === 'ru' ? exercise.cameraInstructionRu : exercise.cameraInstruction}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setVoiceEnabled((enabled) => !enabled);
+              lastSpokenRef.current = '';
+              if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+            }}
+            className="btn-secondary flex items-center gap-2 text-sm"
+            aria-pressed={voiceEnabled}
+          >
+            {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            {voiceEnabled ? text('Voice on', 'Голос включён') : text('Voice off', 'Голос выключен')}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -154,7 +195,10 @@ export default function ExerciseSessionPage() {
           <div className="flex gap-2">
             {!state.isRunning ? (
               <button
-                onClick={startSession}
+                onClick={() => {
+                  lastSpokenRef.current = '';
+                  startSession();
+                }}
                 disabled={!state.isReady}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
