@@ -1,13 +1,14 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Brain, Loader2, Send } from 'lucide-react';
+import { Brain, Send } from 'lucide-react';
 
 type ChatMessage = {
   id: number;
   role: 'user' | 'assistant';
   content: string;
   created_at: string;
+  status?: 'sending' | 'failed';
 };
 
 function isChatMessage(value: unknown): value is ChatMessage {
@@ -24,34 +25,54 @@ function isChatMessage(value: unknown): value is ChatMessage {
 export function GeminiChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [historyReady, setHistoryReady] = useState(false);
+  const [storageKey, setStorageKey] = useState('');
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(window.localStorage.getItem('rehab-gemini-chat') || '[]');
-      if (Array.isArray(saved)) setMessages(saved.filter(isChatMessage).slice(-40));
-    } catch {
+    let cancelled = false;
+
+    async function loadUserHistory() {
       try {
-        window.localStorage.removeItem('rehab-gemini-chat');
+        const response = await fetch('/api/auth/me', { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok || !data.user?.id) throw new Error('Unable to identify chat owner.');
+
+        const userStorageKey = `rehab-gemini-chat:${data.user.id}`;
+        const saved = JSON.parse(window.localStorage.getItem(userStorageKey) || '[]');
+        if (!cancelled) {
+          setStorageKey(userStorageKey);
+          setMessages(Array.isArray(saved) ? saved.filter(isChatMessage).slice(-40) : []);
+        }
       } catch {
-        // Storage can be unavailable in private or restricted browser modes.
+        if (!cancelled) setError('Chat history is unavailable, but you can still send a message.');
+      } finally {
+        if (!cancelled) setHistoryReady(true);
       }
-    } finally {
-      setHistoryReady(true);
     }
+
+    // Remove the old shared history so another account can never inherit it.
+    try {
+      window.localStorage.removeItem('rehab-gemini-chat');
+    } catch {
+      // Storage can be unavailable in private or restricted browser modes.
+    }
+    loadUserHistory();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (!historyReady) return;
+    if (!historyReady || !storageKey) return;
     try {
-      window.localStorage.setItem('rehab-gemini-chat', JSON.stringify(messages.slice(-40)));
+      window.localStorage.setItem(storageKey, JSON.stringify(messages.slice(-40)));
     } catch {
       // The chat remains usable for the current page even without persistence.
     }
-  }, [historyReady, messages]);
+  }, [historyReady, messages, storageKey]);
 
   useEffect(() => {
     const target = endRef.current;
@@ -68,21 +89,37 @@ export function GeminiChat() {
     setQuestion('');
     setError('');
     setLoading(true);
+    const optimisticId = -Date.now();
+    const optimisticMessage: ChatMessage = {
+      id: optimisticId,
+      role: 'user',
+      content,
+      created_at: new Date().toISOString(),
+      status: 'sending',
+    };
+    const requestHistory = messages.slice(-12);
+    setMessages((current) => [...current, optimisticMessage]);
+
     try {
       const res = await fetch('/api/gemini/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: content,
-          history: messages.slice(-12).map(({ role, content: previousContent }) => ({ role, content: previousContent })),
+          history: requestHistory.map(({ role, content: previousContent }) => ({ role, content: previousContent })),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Unable to send message.');
-      setMessages((current) => [...current, data.userMessage, data.assistantMessage]);
+      setMessages((current) => [
+        ...current.map((item) => item.id === optimisticId ? data.userMessage : item),
+        data.assistantMessage,
+      ]);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Unable to send message.');
-      setQuestion(content);
+      setMessages((current) => current.map((item) =>
+        item.id === optimisticId ? { ...item, status: 'failed' } : item
+      ));
     } finally {
       setLoading(false);
     }
@@ -103,15 +140,25 @@ export function GeminiChat() {
           <p className="text-sm text-clinical-500 py-4 text-center">Ask about the recovery data shown in this app.</p>
         )}
         {messages.map((message) => (
-          <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <p className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${
+          <div key={message.id} className={`chat-message-enter flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
+            <p className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap shadow-sm ${
               message.role === 'user' ? 'bg-medical-600 text-white' : 'bg-clinical-100 text-clinical-800'
             }`}>
               {message.content}
             </p>
+            {message.status === 'sending' && <span className="mt-1 text-[10px] text-clinical-400">Sending…</span>}
+            {message.status === 'failed' && <span className="mt-1 text-[10px] text-red-500">Not sent</span>}
           </div>
         ))}
-        {loading && <Loader2 className="w-5 h-5 animate-spin text-medical-600" />}
+        {loading && (
+          <div className="chat-message-enter flex justify-start" aria-label="AI is typing">
+            <div className="flex items-center gap-1 rounded-2xl bg-clinical-100 px-4 py-3">
+              <span className="chat-typing-dot" />
+              <span className="chat-typing-dot [animation-delay:150ms]" />
+              <span className="chat-typing-dot [animation-delay:300ms]" />
+            </div>
+          </div>
+        )}
         <div ref={endRef} />
       </div>
 
